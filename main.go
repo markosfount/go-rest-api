@@ -15,15 +15,10 @@ const (
 	DB_NAME     = "postgres"
 )
 
-// Create a custom Env struct which holds a connection pool.
-type Env struct {
-	db *sql.DB
-}
-
 // DB set up
 func setupDB() *sql.DB {
-	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", DB_USER, DB_PASSWORD, DB_NAME)
-	db, err := sql.Open("postgres", dbinfo)
+	dbInfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", DB_USER, DB_PASSWORD, DB_NAME)
+	db, err := sql.Open("postgres", dbInfo)
 
 	if err != nil {
 		log.Fatalf("test init failed: %s", err)
@@ -37,9 +32,10 @@ func main() {
 	db := setupDB()
 
 	// Create an instance of Env containing the connection pool.
-	env := &Env{db: db}
+	env := &handler.Env{Db: db}
 
-	http.HandleFunc("/", handler.TestHandler)
+	http.HandleFunc("/movies", env.GetMovies)
+	http.HandleFunc("/ping", env.TestHandler)
 
 	// listen port
 	err := http.ListenAndServe(":3000", nil)
@@ -49,22 +45,4 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Use env.booksIndex as the handler function for the /books route.
-	http.HandleFunc("/movies", env.booksIndex)
-	http.ListenAndServe(":3000", nil)
-}
-
-// Define booksIndex as a method on Env.
-func (env *Env) booksIndex(w http.ResponseWriter, r *http.Request) {
-	// We can now access the connection pool directly in our handlers.
-	bks, err := models.AllBooks(env.db)
-	if err != nil {
-		log.Print(err)
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	for _, bk := range bks {
-		fmt.Fprintf(w, "%s, %s, %s, £%.2f\n", bk.Isbn, bk.Title, bk.Author, bk.Price)
-	}
 }
