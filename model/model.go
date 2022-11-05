@@ -13,7 +13,6 @@ type Movie struct {
 func GetMovies(db *sql.DB) ([]Movie, error) {
 	fmt.Println("Getting movies...")
 
-	// Get all movies from movies table that don't have movieID = "1"
 	rows, err := db.Query("SELECT * FROM movies")
 
 	if err != nil {
@@ -40,4 +39,18 @@ func GetMovies(db *sql.DB) ([]Movie, error) {
 	}
 
 	return movies, nil
+}
+
+func CreateMovie(movie *Movie, db *sql.DB) (*Movie, error) {
+	fmt.Println("Inserting new movie with ID: " + movie.MovieId + " and name: " + movie.MovieName)
+
+	var lastInsertID int
+	err := db.QueryRow(
+		"INSERT INTO movies(movieID, movieName) VALUES($1, $2) returning id;", movie.MovieId, movie.MovieName).Scan(&lastInsertID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return movie, nil
 }
