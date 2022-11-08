@@ -41,6 +41,20 @@ func GetMovies(db *sql.DB) ([]Movie, error) {
 	return movies, nil
 }
 
+func GetMovie(db *sql.DB, movieId string) (*Movie, error) {
+	fmt.Printf("Getting movie with id %s\n", movieId)
+
+	movie := Movie{}
+	err := db.QueryRow("SELECT movieId, movieName FROM movies WHERE movieID = $1;", movieId).
+		Scan(&movie.MovieId, &movie.MovieName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &movie, nil
+}
+
 func CreateMovie(movie *Movie, db *sql.DB) (*Movie, error) {
 	fmt.Println("Inserting new movie with ID: " + movie.MovieId + " and name: " + movie.MovieName)
 

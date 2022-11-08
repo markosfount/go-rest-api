@@ -57,6 +57,56 @@ func (env Env) GetMovies(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusOK, movieJSON)
 }
 
+func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
+
+	if req.Method != "GET" {
+		// Add the response return message
+		HandlerMessage := []byte(`{
+   		"success": false,
+   		"message": "Check your HTTP method: Invalid HTTP method executed",
+  	}`)
+
+		utils.ReturnJsonResponse(res, http.StatusMethodNotAllowed, HandlerMessage)
+		return
+	}
+
+	if _, ok := req.URL.Query()["id"]; !ok {
+		HandlerMessage := []byte(`{
+   		"success": false,
+   		"message": "Μovie id not provided",
+  	}`)
+		utils.ReturnJsonResponse(res, http.StatusBadRequest, HandlerMessage)
+		return
+	}
+
+	id := req.URL.Query()["id"][0]
+
+	movie, err := model.GetMovie(env.Db, id)
+	if err != nil {
+		HandlerMessage := []byte(`{
+   		"success": false,
+   		"message": "Requested movie not found",
+  	}`)
+
+		utils.ReturnJsonResponse(res, http.StatusNotFound, HandlerMessage)
+		return
+	}
+
+	movieJSON, err := json.Marshal(&movie)
+	if err != nil {
+		HandlerMessage := []byte(`{
+   		"success": false,
+   		"message": "Error parsing the movie data",
+  	}`)
+
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
+		return
+	}
+
+	utils.ReturnJsonResponse(res, http.StatusOK, movieJSON)
+}
+
+// TODO conflict same movieid
 func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 
 	if req.Method != "POST" {

@@ -35,7 +35,8 @@ func main() {
 	env := &handler.Env{Db: db}
 
 	http.HandleFunc("/movies", env.GetMovies)
-	http.HandleFunc("/movies/create", env.AddMovie)
+	http.HandleFunc("/movie", env.GetMovie)
+	http.HandleFunc("/movie/create", env.AddMovie)
 	http.HandleFunc("/ping", env.TestHandler)
 
 	// listen port
