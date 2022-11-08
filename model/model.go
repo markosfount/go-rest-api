@@ -3,11 +3,19 @@ package model
 import (
 	"database/sql"
 	"fmt"
+	"github.com/lib/pq"
 )
 
 type Movie struct {
 	MovieId   string `json:"id"`
 	MovieName string `json:"title"`
+}
+
+type ConflictError struct {
+}
+
+func (c *ConflictError) Error() string {
+	return "Conflict when trying to add movie."
 }
 
 func GetMovies(db *sql.DB) ([]Movie, error) {
@@ -63,7 +71,13 @@ func CreateMovie(movie *Movie, db *sql.DB) (*Movie, error) {
 		"INSERT INTO movies(movieID, movieName) VALUES($1, $2) returning id;", movie.MovieId, movie.MovieName).Scan(&lastInsertID)
 
 	if err != nil {
-		return nil, err
+		pqErr := err.(*pq.Error)
+		switch pqErr.Code {
+		case "23505":
+			return nil, &ConflictError{}
+		default:
+			return nil, err
+		}
 	}
 
 	return movie, nil

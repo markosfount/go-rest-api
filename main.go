@@ -9,6 +9,7 @@ import (
 	"rest_api/handler"
 )
 
+// TODO get env
 const (
 	DB_USER     = "user"
 	DB_PASSWORD = "password"
