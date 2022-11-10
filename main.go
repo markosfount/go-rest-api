@@ -38,6 +38,7 @@ func main() {
 	http.HandleFunc("/movies", env.GetMovies)
 	http.HandleFunc("/movie", env.GetMovie)
 	http.HandleFunc("/movie/create", env.AddMovie)
+	http.HandleFunc("/movie/update", env.UpdateMovie)
 	http.HandleFunc("/ping", env.TestHandler)
 
 	// listen port

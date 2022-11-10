@@ -18,6 +18,7 @@ func (c *ConflictError) Error() string {
 	return "Conflict when trying to add movie."
 }
 
+// TODO handle not found in all
 func GetMovies(db *sql.DB) ([]Movie, error) {
 	fmt.Println("Getting movies...")
 
@@ -50,7 +51,7 @@ func GetMovies(db *sql.DB) ([]Movie, error) {
 }
 
 func GetMovie(db *sql.DB, movieId string) (*Movie, error) {
-	fmt.Printf("Getting movie with id %s\n", movieId)
+	fmt.Printf("Getting movie with movieId %s\n", movieId)
 
 	movie := Movie{}
 	err := db.QueryRow("SELECT movieId, movieName FROM movies WHERE movieID = $1;", movieId).
@@ -78,6 +79,19 @@ func CreateMovie(movie *Movie, db *sql.DB) (*Movie, error) {
 		default:
 			return nil, err
 		}
+	}
+
+	return movie, nil
+}
+
+func UpdateMovie(movie *Movie, db *sql.DB) (*Movie, error) {
+	fmt.Println("Updating movie with ID: " + movie.MovieId)
+
+	err := db.QueryRow(
+		"UPDATE movies SET movieId = $1, movieName = $2 WHERE movieId = $1;", movie.MovieId, movie.MovieName).Err()
+
+	if err != nil {
+		return nil, err
 	}
 
 	return movie, nil
