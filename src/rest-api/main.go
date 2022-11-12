@@ -9,16 +9,14 @@ import (
 	"rest_api/handler"
 )
 
-// TODO get env
-const (
-	DB_USER     = "user"
-	DB_PASSWORD = "password"
-	DB_NAME     = "postgres"
-)
+var dbHost = getEnv("DB_HOST", "localhost")
+var dbUser = getEnv("DB_USER", "user")
+var dbPassword = getEnv("DB_PASS", "password")
+var dbName = getEnv("DB_NAME", "postgres")
 
 // DB set up
 func setupDB() *sql.DB {
-	dbInfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", DB_USER, DB_PASSWORD, DB_NAME)
+	dbInfo := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbUser, dbPassword, dbName)
 	db, err := sql.Open("postgres", dbInfo)
 
 	if err != nil {
@@ -49,4 +47,11 @@ func main() {
 		os.Exit(1)
 	}
 
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }
