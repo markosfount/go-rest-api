@@ -12,7 +12,7 @@ import (
 var dbHost = getEnv("DB_HOST", "localhost")
 var dbUser = getEnv("DB_USER", "user")
 var dbPassword = getEnv("DB_PASS", "password")
-var dbName = getEnv("DB_NAME", "postgres")
+var dbName = getEnv("DB_NAME", "movies")
 
 // DB set up
 func setupDB() *sql.DB {

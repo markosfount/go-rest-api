@@ -10,7 +10,7 @@ services:
       - DB_HOST=postgresql
       - DB_USER=user
       - DB_PASS=password
-      - DB_NAME=postgres
+      - DB_NAME=movies
     ports:
       - "3000:3000"
   postgresql:
@@ -23,6 +23,7 @@ services:
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=movies
     volumes:
       - ./scripts/db:/docker-entrypoint-initdb.d/
     ports:
