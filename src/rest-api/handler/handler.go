@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
@@ -27,17 +28,6 @@ func (env Env) TestHandler(res http.ResponseWriter, req *http.Request) {
 
 // TODO log errors
 func (env Env) GetMovies(res http.ResponseWriter, req *http.Request) {
-	if req.Method != "GET" {
-		// Add the response return message
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Check your HTTP method: Invalid HTTP method executed",
-}`)
-
-		utils.ReturnJsonResponse(res, http.StatusMethodNotAllowed, HandlerMessage)
-		return
-	}
-
 	movies, err := model.GetMovies(env.Db)
 	if err != nil {
 		log.Print(err)
@@ -60,28 +50,16 @@ func (env Env) GetMovies(res http.ResponseWriter, req *http.Request) {
 }
 
 func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
-
-	if req.Method != "GET" {
-		// Add the response return message
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Check your HTTP method: Invalid HTTP method executed",
-}`)
-
-		utils.ReturnJsonResponse(res, http.StatusMethodNotAllowed, HandlerMessage)
-		return
-	}
-
-	if _, ok := req.URL.Query()["movieId"]; !ok {
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Μovie movieId not provided",
-}`)
-		utils.ReturnJsonResponse(res, http.StatusBadRequest, HandlerMessage)
-		return
-	}
-
-	movieId := req.URL.Query()["movieId"][0]
+	//	if _, ok := req.URL.Query()["movieId"]; !ok {
+	//		HandlerMessage := []byte(`{
+	//	"success": false,
+	//	"message": "Μovie movieId not provided",
+	//}`)
+	//		utils.ReturnJsonResponse(res, http.StatusBadRequest, HandlerMessage)
+	//		return
+	//	}
+	vars := mux.Vars(req)
+	movieId := vars["movieId"]
 
 	// fixme specific error for not found
 	movie, err := model.GetMovie(env.Db, movieId)
@@ -110,18 +88,6 @@ func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
 }
 
 func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
-
-	if req.Method != "POST" {
-		// Add the response return message
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Check your HTTP method: Invalid HTTP method executed",
-}`)
-
-		utils.ReturnJsonResponse(res, http.StatusMethodNotAllowed, HandlerMessage)
-		return
-	}
-
 	var movie model.Movie
 
 	payload := req.Body
@@ -181,29 +147,18 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusCreated, movieJSON)
 }
 
+// fixme bug creates movie when trying to update non existing
 func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
-
-	if req.Method != "PUT" {
-		// Add the response return message
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Check your HTTP method: Invalid HTTP method executed",
-}`)
-
-		utils.ReturnJsonResponse(res, http.StatusMethodNotAllowed, HandlerMessage)
-		return
-	}
-
-	if _, ok := req.URL.Query()["movieId"]; !ok {
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Μovie movieId not provided",
-}`)
-		utils.ReturnJsonResponse(res, http.StatusBadRequest, HandlerMessage)
-		return
-	}
-
-	movieId := req.URL.Query()["movieId"][0]
+	//	if _, ok := req.URL.Query()["movieId"]; !ok {
+	//		HandlerMessage := []byte(`{
+	//	"success": false,
+	//	"message": "Μovie movieId not provided",
+	//}`)
+	//		utils.ReturnJsonResponse(res, http.StatusBadRequest, HandlerMessage)
+	//		return
+	//	}
+	vars := mux.Vars(req)
+	movieId := vars["movieId"]
 
 	var movie model.Movie
 

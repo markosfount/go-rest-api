@@ -3,6 +3,7 @@ package main // Update the AllBooks function so it accepts the connection pool a
 import (
 	"database/sql"
 	"fmt"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
@@ -32,12 +33,14 @@ func main() {
 
 	// Create an instance of Env containing the connection pool.
 	env := &handler.Env{Db: db}
+	r := mux.NewRouter()
 
-	http.HandleFunc("/movies", env.GetMovies)
-	http.HandleFunc("/movie", env.GetMovie)
-	http.HandleFunc("/movie/create", env.AddMovie)
-	http.HandleFunc("/movie/update", env.UpdateMovie)
-	http.HandleFunc("/ping", env.TestHandler)
+	r.HandleFunc("/ping", env.TestHandler).Methods(http.MethodGet)
+	r.HandleFunc("/movies", env.GetMovies).Methods(http.MethodGet)
+	r.HandleFunc("/movies/{movieId}", env.GetMovie).Methods(http.MethodGet)
+	r.HandleFunc("/movies", env.AddMovie).Methods(http.MethodPost)
+	r.HandleFunc("/movies/{movieId}", env.UpdateMovie).Methods(http.MethodPut)
+	http.Handle("/", r)
 
 	// listen port
 	err := http.ListenAndServe(":3000", nil)
