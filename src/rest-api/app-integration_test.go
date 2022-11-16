@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -26,6 +27,11 @@ var databasePassword = getEnv("DB_PASS", "password")
 
 var db *sql.DB
 
+type ResponseMessage struct {
+	Success bool
+	Message string
+}
+
 type AppSuite struct {
 	suite.Suite
 }
@@ -41,6 +47,7 @@ func (s *AppSuite) SetupSuite() {
 }
 
 func (s *AppSuite) TearDownSuite() {
+	clearDatabase()
 	defer db.Close()
 }
 
@@ -87,6 +94,99 @@ func (s *AppSuite) TestGetAllMovies() {
 		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
 	}
 	s.ElementsMatchf(expectedMovies, movies, "Should return two movies")
+
+	clearDatabase()
+}
+
+func (s *AppSuite) TestGetMovie() {
+	// GET when movie does not exist
+
+	response, err := http.Get(apiHost + "/movies/1")
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusNotFound, response.StatusCode, "Expected status to be not found")
+
+	responseData, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", readErr)
+	}
+	defer response.Body.Close()
+	responseMessage := ResponseMessage{}
+	expectedMessage := ResponseMessage{false, "Requested movie not found"}
+	jsonErr := json.Unmarshal(responseData, &responseMessage)
+	if jsonErr != nil {
+		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
+	}
+	s.Equal(expectedMessage, responseMessage, "Should return message for not found")
+
+	// GET when movies exist in db
+	createMovieInDatabase(model.Movie{MovieId: "1", MovieName: "name1"})
+
+	response, err = http.Get(apiHost + "/movies/1")
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusOK, response.StatusCode, "Expected status to be ok")
+
+	responseData, readErr = io.ReadAll(response.Body)
+	if readErr != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", readErr)
+	}
+	defer response.Body.Close()
+	movie := model.Movie{}
+	expectedMovie := model.Movie{MovieId: "1", MovieName: "name1"}
+	jsonErr = json.Unmarshal(responseData, &movie)
+	if jsonErr != nil {
+		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
+	}
+	s.Equal(expectedMovie, movie, "Should return created movie")
+
+	clearDatabase()
+}
+
+func (s *AppSuite) TestCreateMovie() {
+	// Create movie
+
+	movieToCreate := model.Movie{MovieId: "1", MovieName: "name1"}
+	body, jsonErr := json.Marshal(movieToCreate)
+
+	response, err := http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusCreated, response.StatusCode, "Expected status to created")
+
+	responseData, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", readErr)
+	}
+	defer response.Body.Close()
+	movie := model.Movie{}
+	expectedMovie := model.Movie{MovieId: "1", MovieName: "name1"}
+	jsonErr = json.Unmarshal(responseData, &movie)
+	if jsonErr != nil {
+		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
+	}
+	// todo asset movie got created in db
+	s.Equal(expectedMovie, movie, "Should return created movie")
+
+	// Try to create already existing movie
+	clearDatabase()
+	createMovieInDatabase(model.Movie{MovieId: "1", MovieName: "name1"})
+
+	response, err = http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusConflict, response.StatusCode, "Expected status to be conflict")
+
+	responseData, readErr = io.ReadAll(response.Body)
+	if readErr != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", readErr)
+	}
+	defer response.Body.Close()
+	responseMessage := ResponseMessage{}
+	expectedMessage := ResponseMessage{false, "A movie with the provided id already exists"}
+	jsonErr = json.Unmarshal(responseData, &responseMessage)
+	if jsonErr != nil {
+		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
+	}
+	s.Equal(expectedMessage, responseMessage, "Should return message for conflict")
+
+	clearDatabase()
 }
 
 func createMovieInDatabase(movie model.Movie) {

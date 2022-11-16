@@ -17,6 +17,7 @@ type Env struct {
 	Db *sql.DB
 }
 
+// todo create response message with struct rather than json string
 func (env Env) TestHandler(res http.ResponseWriter, req *http.Request) {
 	HandlerMessage := []byte(`{
 	"success": true,
@@ -66,7 +67,7 @@ func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		HandlerMessage := []byte(`{
 	"success": false,
-	"message": "Requested movie not found",
+	"message": "Requested movie not found"
 }`)
 
 		utils.ReturnJsonResponse(res, http.StatusNotFound, HandlerMessage)
@@ -77,7 +78,7 @@ func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		HandlerMessage := []byte(`{
 	"success": false,
-	"message": "Error parsing the movie data",
+	"message": "Error parsing the movie data"
 }`)
 
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
@@ -97,7 +98,7 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		HandlerMessage := []byte(`{
 	"success": false,
-	"message": "Error parsing the movie data",
+	"message": "Error parsing the movie data"
 }`)
 
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
@@ -107,7 +108,7 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 	if movie.MovieId == "" || movie.MovieName == "" {
 		HandlerMessage := []byte(`{
 	"success": false,
-	"message": ""You are missing movieID or movieName parameter",
+	"message": ""You are missing movieID or movieName parameter"
 }`)
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
 		return
@@ -119,14 +120,14 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 		if errors.As(err, &cerr) {
 			HandlerMessage := []byte(`{
 	"success": false,
-	"message": "A movie with the provided id already exists",
+	"message": "A movie with the provided id already exists"
 }`)
 			utils.ReturnJsonResponse(res, http.StatusConflict, HandlerMessage)
 			return
 		}
 		HandlerMessage := []byte(`{
 	"success": false,
-	"message": "Unexpected error when creating response",
+	"message": "Unexpected error when creating response"
 }`)
 		fmt.Printf("Unable to create movie in the database: error: %v\n", err)
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
@@ -137,7 +138,7 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		HandlerMessage := []byte(`{
 	"success": false,
-	"message": "Unexpected error when creating response",
+	"message": "Unexpected error when creating response"
 }`)
 		fmt.Printf("Unable to parse movie dao to json: error: %v\n", err)
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
@@ -169,7 +170,7 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		HandlerMessage := []byte(`{
 	"success": false,
-	"message": "Error parsing the movie data",
+	"message": "Error parsing the movie data"
 }`)
 
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
@@ -179,7 +180,7 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	if movieId != movie.MovieId {
 		HandlerMessage := []byte(`{
 	"success": false,
-	"message": ""Mismatch between movieId in query parameter and request body",
+	"message": ""Mismatch between movieId in query parameter and request body"
 }`)
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
 		return
@@ -189,7 +190,7 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		HandlerMessage := []byte(`{
 	"success": false,
-	"message": "Unexpected error when updating movie.",
+	"message": "Unexpected error when updating movie."
 }`)
 		fmt.Printf("Unable to update movie in the database: error: %v\n", err)
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
@@ -200,7 +201,7 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		HandlerMessage := []byte(`{
 	"success": false,
-	"message": "Unexpected error when creating response",
+	"message": "Unexpected error when creating response"
 }`)
 		fmt.Printf("Unable to parse movie dao to json: error: %v\n", err)
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
