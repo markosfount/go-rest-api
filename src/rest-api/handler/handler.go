@@ -17,14 +17,9 @@ type Env struct {
 	Db *sql.DB
 }
 
-// todo create response message with struct rather than json string
 func (env Env) TestHandler(res http.ResponseWriter, req *http.Request) {
-	HandlerMessage := []byte(`{
-	"success": true,
-	"message": "The server is running properly"
-}`)
-
-	utils.ReturnJsonResponse(res, http.StatusOK, HandlerMessage)
+	responseBytes := createResponse(true, "The server is running properly")
+	utils.ReturnJsonResponse(res, http.StatusOK, responseBytes)
 }
 
 // TODO log errors
@@ -37,13 +32,8 @@ func (env Env) GetMovies(res http.ResponseWriter, req *http.Request) {
 
 	movieJSON, err := json.Marshal(&movies)
 	if err != nil {
-		// Add the response return message
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Error parsing the movie data",
-}`)
-
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
+		responseBytes := createResponse(false, "Error parsing the movie data")
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 
@@ -65,23 +55,15 @@ func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
 	// fixme specific error for not found
 	movie, err := model.GetMovie(env.Db, movieId)
 	if err != nil {
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Requested movie not found"
-}`)
-
-		utils.ReturnJsonResponse(res, http.StatusNotFound, HandlerMessage)
+		responseBytes := createResponse(false, "Requested movie not found")
+		utils.ReturnJsonResponse(res, http.StatusNotFound, responseBytes)
 		return
 	}
 
 	movieJSON, err := json.Marshal(&movie)
 	if err != nil {
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Error parsing the movie data"
-}`)
-
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
+		responseBytes := createResponse(false, "Error parsing the movie data")
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 
@@ -96,21 +78,14 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	err := json.NewDecoder(payload).Decode(&movie)
 	if err != nil {
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Error parsing the movie data"
-}`)
-
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
+		responseBytes := createResponse(false, "Error parsing the movie data")
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 
 	if movie.MovieId == "" || movie.MovieName == "" {
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": ""You are missing movieID or movieName parameter"
-}`)
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
+		responseBytes := createResponse(false, "You are missing movieID or movieName parameter")
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 	createdMovie, err := model.CreateMovie(&movie, env.Db)
@@ -118,30 +93,21 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		var cerr *model.ConflictError
 		if errors.As(err, &cerr) {
-			HandlerMessage := []byte(`{
-	"success": false,
-	"message": "A movie with the provided id already exists"
-}`)
-			utils.ReturnJsonResponse(res, http.StatusConflict, HandlerMessage)
+			responseBytes := createResponse(false, "A movie with the provided id already exists")
+			utils.ReturnJsonResponse(res, http.StatusConflict, responseBytes)
 			return
 		}
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Unexpected error when creating response"
-}`)
+		responseBytes := createResponse(false, "Unexpected error when creating response")
 		fmt.Printf("Unable to create movie in the database: error: %v\n", err)
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 
 	movieJSON, err := json.Marshal(createdMovie)
 	if err != nil {
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Unexpected error when creating response"
-}`)
+		responseBytes := createResponse(false, "Error parsing the movie data")
 		fmt.Printf("Unable to parse movie dao to json: error: %v\n", err)
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 
@@ -151,11 +117,11 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 // fixme bug creates movie when trying to update non existing
 func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	//	if _, ok := req.URL.Query()["movieId"]; !ok {
-	//		HandlerMessage := []byte(`{
+	//		responseBytes := []byte(`{
 	//	"success": false,
 	//	"message": "Μovie movieId not provided",
 	//}`)
-	//		utils.ReturnJsonResponse(res, http.StatusBadRequest, HandlerMessage)
+	//		utils.ReturnJsonResponse(res, http.StatusBadRequest, responseBytes)
 	//		return
 	//	}
 	vars := mux.Vars(req)
@@ -168,45 +134,38 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	err := json.NewDecoder(payload).Decode(&movie)
 	if err != nil {
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Error parsing the movie data"
-}`)
-
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
+		responseBytes := createResponse(false, "Error parsing the movie data")
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 
 	if movieId != movie.MovieId {
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": ""Mismatch between movieId in query parameter and request body"
-}`)
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
+		responseBytes := createResponse(false, "Mismatch between movieId in query parameter and request body")
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 	updatedMovie, err := model.UpdateMovie(&movie, env.Db)
 
 	if err != nil {
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Unexpected error when updating movie."
-}`)
+		responseBytes := createResponse(false, "Unexpected error when updating movie.")
 		fmt.Printf("Unable to update movie in the database: error: %v\n", err)
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 
 	movieJSON, err := json.Marshal(updatedMovie)
 	if err != nil {
-		HandlerMessage := []byte(`{
-	"success": false,
-	"message": "Unexpected error when creating response"
-}`)
+		responseBytes := createResponse(false, "Error parsing the movie data")
 		fmt.Printf("Unable to parse movie dao to json: error: %v\n", err)
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, HandlerMessage)
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 
 	utils.ReturnJsonResponse(res, http.StatusCreated, movieJSON)
+}
+
+func createResponse(success bool, message string) []byte {
+	response := model.ResponseMessage{Success: success, Message: message}
+	responseBytes, _ := json.Marshal(response)
+	return responseBytes
 }

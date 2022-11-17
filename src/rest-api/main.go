@@ -1,4 +1,4 @@
-package main // Update the AllBooks function so it accepts the connection pool as a
+package main
 
 import (
 	"database/sql"
@@ -15,7 +15,6 @@ var dbUser = getEnv("DB_USER", "user")
 var dbPassword = getEnv("DB_PASS", "password")
 var dbName = getEnv("DB_NAME", "movies")
 
-// DB set up
 func setupDB() *sql.DB {
 	dbInfo := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbUser, dbPassword, dbName)
 	db, err := sql.Open("postgres", dbInfo)

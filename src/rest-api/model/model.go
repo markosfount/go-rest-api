@@ -11,6 +11,11 @@ type Movie struct {
 	MovieName string `json:"title"`
 }
 
+type ResponseMessage struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
 type ConflictError struct {
 }
 

@@ -27,11 +27,6 @@ var databasePassword = getEnv("DB_PASS", "password")
 
 var db *sql.DB
 
-type ResponseMessage struct {
-	Success bool
-	Message string
-}
-
 type AppSuite struct {
 	suite.Suite
 }
@@ -110,8 +105,8 @@ func (s *AppSuite) TestGetMovie() {
 		log.Fatalf("got error when trying to read API response. Error: %s", readErr)
 	}
 	defer response.Body.Close()
-	responseMessage := ResponseMessage{}
-	expectedMessage := ResponseMessage{false, "Requested movie not found"}
+	responseMessage := model.ResponseMessage{}
+	expectedMessage := model.ResponseMessage{Message: "Requested movie not found"}
 	jsonErr := json.Unmarshal(responseData, &responseMessage)
 	if jsonErr != nil {
 		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
@@ -178,8 +173,8 @@ func (s *AppSuite) TestCreateMovie() {
 		log.Fatalf("got error when trying to read API response. Error: %s", readErr)
 	}
 	defer response.Body.Close()
-	responseMessage := ResponseMessage{}
-	expectedMessage := ResponseMessage{false, "A movie with the provided id already exists"}
+	responseMessage := model.ResponseMessage{}
+	expectedMessage := model.ResponseMessage{false, "A movie with the provided id already exists"}
 	jsonErr = json.Unmarshal(responseData, &responseMessage)
 	if jsonErr != nil {
 		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
