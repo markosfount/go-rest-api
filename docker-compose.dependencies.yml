@@ -1,18 +1,6 @@
 version: '3'
 
 services:
-  rest-api:
-    build:
-      context: .
-    depends_on:
-      - postgresql
-    environment:
-      - DB_HOST=postgresql
-      - DB_USER=user
-      - DB_PASS=password
-      - DB_NAME=movies
-    ports:
-      - "3000:3000"
   postgresql:
     image: postgres:9.5-alpine
     healthcheck:

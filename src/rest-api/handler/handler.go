@@ -55,7 +55,7 @@ func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
 	// fixme specific error for not found
 	movie, err := model.GetMovie(env.Db, movieId)
 	if err != nil {
-		responseBytes := createResponse(false, "Requested movie not found")
+		responseBytes := createResponse(false, "No movie with provided id exists")
 		utils.ReturnJsonResponse(res, http.StatusNotFound, responseBytes)
 		return
 	}
@@ -147,6 +147,12 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	updatedMovie, err := model.UpdateMovie(&movie, env.Db)
 
 	if err != nil {
+		var nferr *model.NotFoundError
+		if errors.As(err, &nferr) {
+			responseBytes := createResponse(false, "No movie with provided id exists")
+			utils.ReturnJsonResponse(res, http.StatusNotFound, responseBytes)
+			return
+		}
 		responseBytes := createResponse(false, "Unexpected error when updating movie.")
 		fmt.Printf("Unable to update movie in the database: error: %v\n", err)
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)

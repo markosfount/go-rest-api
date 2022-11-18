@@ -23,6 +23,13 @@ func (c *ConflictError) Error() string {
 	return "Conflict when trying to add movie."
 }
 
+type NotFoundError struct {
+}
+
+func (c *NotFoundError) Error() string {
+	return "Movie not found."
+}
+
 // TODO handle not found in all
 func GetMovies(db *sql.DB) ([]Movie, error) {
 	fmt.Println("Getting movies...")
@@ -92,12 +99,18 @@ func CreateMovie(movie *Movie, db *sql.DB) (*Movie, error) {
 func UpdateMovie(movie *Movie, db *sql.DB) (*Movie, error) {
 	fmt.Println("Updating movie with ID: " + movie.MovieId)
 
-	err := db.QueryRow(
-		"UPDATE movies SET movieId = $1, movieName = $2 WHERE movieId = $1;", movie.MovieId, movie.MovieName).Err()
+	res, err := db.Exec(
+		"UPDATE movies SET movieId = $1, movieName = $2 WHERE movieId = $1;", movie.MovieId, movie.MovieName)
 
 	if err != nil {
 		return nil, err
 	}
-
+	count, err := res.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if count == 0 {
+		return nil, &NotFoundError{}
+	}
 	return movie, nil
 }

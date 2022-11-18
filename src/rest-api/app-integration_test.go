@@ -106,7 +106,7 @@ func (s *AppSuite) TestGetMovie() {
 	}
 	defer response.Body.Close()
 	responseMessage := model.ResponseMessage{}
-	expectedMessage := model.ResponseMessage{Message: "Requested movie not found"}
+	expectedMessage := model.ResponseMessage{Message: "No movie with provided id exists"}
 	jsonErr := json.Unmarshal(responseData, &responseMessage)
 	if jsonErr != nil {
 		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
@@ -138,8 +138,8 @@ func (s *AppSuite) TestGetMovie() {
 
 func (s *AppSuite) TestCreateMovie() {
 	// Create movie
-
-	movieToCreate := model.Movie{MovieId: "1", MovieName: "name1"}
+	movieId := "1"
+	movieToCreate := model.Movie{MovieId: movieId, MovieName: "name1"}
 	body, jsonErr := json.Marshal(movieToCreate)
 
 	response, err := http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
@@ -157,8 +157,10 @@ func (s *AppSuite) TestCreateMovie() {
 	if jsonErr != nil {
 		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
 	}
-	// todo asset movie got created in db
 	s.Equal(expectedMovie, movie, "Should return created movie")
+	// check that movie was created in db
+	savedMovie := getMovieFromDatabase(movieId)
+	s.Equal(expectedMovie, savedMovie, "Should return created movie")
 
 	// Try to create already existing movie
 	clearDatabase()
@@ -174,7 +176,7 @@ func (s *AppSuite) TestCreateMovie() {
 	}
 	defer response.Body.Close()
 	responseMessage := model.ResponseMessage{}
-	expectedMessage := model.ResponseMessage{false, "A movie with the provided id already exists"}
+	expectedMessage := model.ResponseMessage{Message: "A movie with the provided id already exists"}
 	jsonErr = json.Unmarshal(responseData, &responseMessage)
 	if jsonErr != nil {
 		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
@@ -184,12 +186,78 @@ func (s *AppSuite) TestCreateMovie() {
 	clearDatabase()
 }
 
+func (s *AppSuite) TestUpdateMovie() {
+	// Update movie when does not exist
+	movieId := "1"
+	movieToUpdate := model.Movie{MovieId: movieId, MovieName: "name1"}
+	body, jsonErr := json.Marshal(movieToUpdate)
+
+	req, reqErr := http.NewRequest(http.MethodPut, apiHost+"/movies/1", bytes.NewBuffer(body))
+	if jsonErr != nil {
+		log.Fatalf("got error when trying to create API request. Error: %s", reqErr)
+	}
+	req.Header.Set("content-type", "application/json")
+
+	response, err := http.DefaultClient.Do(req)
+
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusNotFound, response.StatusCode, "Expected status to be not found")
+
+	responseData, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", readErr)
+	}
+	responseMessage := model.ResponseMessage{}
+	expectedMessage := model.ResponseMessage{Message: "No movie with provided id exists"}
+	jsonErr = json.Unmarshal(responseData, &responseMessage)
+	if jsonErr != nil {
+		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
+	}
+	s.Equal(expectedMessage, responseMessage, "Should return message for not found")
+
+	// Try to create already existing movie
+	//clearDatabase()
+	//createMovieInDatabase(model.Movie{MovieId: "1", MovieName: "name1"})
+	//
+	//response, err = http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
+	//s.NoErrorf(err, "Should get no error from request initially")
+	//s.EqualValuesf(http.StatusConflict, response.StatusCode, "Expected status to be conflict")
+	//
+	//responseData, readErr = io.ReadAll(response.Body)
+	//if readErr != nil {
+	//	log.Fatalf("got error when trying to read API response. Error: %s", readErr)
+	//}
+	//defer response.Body.Close()
+	//responseMessage := model.ResponseMessage{}
+	//expectedMessage := model.ResponseMessage{false, "A movie with the provided id already exists"}
+	//jsonErr = json.Unmarshal(responseData, &responseMessage)
+	//if jsonErr != nil {
+	//	log.Fatalf("Got error when parsing response. error: %s", jsonErr)
+	//}
+	//s.Equal(expectedMessage, responseMessage, "Should return message for conflict")
+	//
+	clearDatabase()
+}
+
 func createMovieInDatabase(movie model.Movie) {
 	sqlStatement := `INSERT INTO "movies" (movieId, movieName) VALUES ($1, $2)`
 	_, err := db.Exec(sqlStatement, movie.MovieId, movie.MovieName)
 	if err != nil {
 		log.Fatalf("Failed creating movie in db for testing: %s", err)
 	}
+}
+
+func getMovieFromDatabase(movieId string) model.Movie {
+	//sqlStatement := `SELECT FROM "movies" WHERE movieId = $1
+	movie := model.Movie{}
+	err := db.QueryRow("SELECT movieId, movieName FROM movies WHERE movieID = $1;", movieId).
+		Scan(&movie.MovieId, &movie.MovieName)
+
+	if err != nil {
+		log.Fatalf("Got error when querying db. error: %s", err)
+	}
+
+	return movie
 }
 
 func clearDatabase() {
