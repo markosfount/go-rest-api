@@ -114,7 +114,6 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusCreated, movieJSON)
 }
 
-// fixme bug creates movie when trying to update non existing
 func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	//	if _, ok := req.URL.Query()["movieId"]; !ok {
 	//		responseBytes := []byte(`{
@@ -141,7 +140,7 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 
 	if movieId != movie.MovieId {
 		responseBytes := createResponse(false, "Mismatch between movieId in query parameter and request body")
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
+		utils.ReturnJsonResponse(res, http.StatusBadRequest, responseBytes)
 		return
 	}
 	updatedMovie, err := model.UpdateMovie(&movie, env.Db)
@@ -167,7 +166,7 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	utils.ReturnJsonResponse(res, http.StatusCreated, movieJSON)
+	utils.ReturnJsonResponse(res, http.StatusOK, movieJSON)
 }
 
 func createResponse(success bool, message string) []byte {

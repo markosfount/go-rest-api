@@ -215,27 +215,68 @@ func (s *AppSuite) TestUpdateMovie() {
 	}
 	s.Equal(expectedMessage, responseMessage, "Should return message for not found")
 
-	// Try to create already existing movie
-	//clearDatabase()
-	//createMovieInDatabase(model.Movie{MovieId: "1", MovieName: "name1"})
-	//
-	//response, err = http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
-	//s.NoErrorf(err, "Should get no error from request initially")
-	//s.EqualValuesf(http.StatusConflict, response.StatusCode, "Expected status to be conflict")
-	//
-	//responseData, readErr = io.ReadAll(response.Body)
-	//if readErr != nil {
-	//	log.Fatalf("got error when trying to read API response. Error: %s", readErr)
-	//}
-	//defer response.Body.Close()
-	//responseMessage := model.ResponseMessage{}
-	//expectedMessage := model.ResponseMessage{false, "A movie with the provided id already exists"}
-	//jsonErr = json.Unmarshal(responseData, &responseMessage)
-	//if jsonErr != nil {
-	//	log.Fatalf("Got error when parsing response. error: %s", jsonErr)
-	//}
-	//s.Equal(expectedMessage, responseMessage, "Should return message for conflict")
-	//
+	// Mismatch between path param and body
+	movieToUpdate = model.Movie{MovieId: movieId, MovieName: "name1"}
+	body, jsonErr = json.Marshal(movieToUpdate)
+
+	req, reqErr = http.NewRequest(http.MethodPut, apiHost+"/movies/2", bytes.NewBuffer(body))
+	if jsonErr != nil {
+		log.Fatalf("got error when trying to create API request. Error: %s", reqErr)
+	}
+	req.Header.Set("content-type", "application/json")
+
+	response, err = http.DefaultClient.Do(req)
+
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusBadRequest, response.StatusCode, "Expected status to be bad request")
+
+	responseData, readErr = io.ReadAll(response.Body)
+	if readErr != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", readErr)
+	}
+	responseMessage = model.ResponseMessage{}
+	expectedMessage = model.ResponseMessage{Message: "Mismatch between movieId in query parameter and request body"}
+	jsonErr = json.Unmarshal(responseData, &responseMessage)
+	if jsonErr != nil {
+		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
+	}
+	s.Equal(expectedMessage, responseMessage, "Should return message for mismatch")
+
+	clearDatabase()
+
+	//Update existing movie
+	createMovieInDatabase(model.Movie{MovieId: "1", MovieName: "name1"})
+	movieToUpdate = model.Movie{MovieId: "1", MovieName: "name2"}
+	body, jsonErr = json.Marshal(movieToUpdate)
+
+	req, reqErr = http.NewRequest(http.MethodPut, apiHost+"/movies/1", bytes.NewBuffer(body))
+	if jsonErr != nil {
+		log.Fatalf("got error when trying to create API request. Error: %s", reqErr)
+	}
+	req.Header.Set("content-type", "application/json")
+
+	response, err = http.DefaultClient.Do(req)
+
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusOK, response.StatusCode, "Expected status to be ok")
+
+	responseData, readErr = io.ReadAll(response.Body)
+	if readErr != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", readErr)
+	}
+
+	movie := model.Movie{}
+	expectedMovie := model.Movie{MovieId: "1", MovieName: "name2"}
+	jsonErr = json.Unmarshal(responseData, &movie)
+	if jsonErr != nil {
+		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
+	}
+	s.Equal(expectedMovie, movie, "Should return updated movie")
+
+	// check that movie was updated in db
+	updatedMovie := getMovieFromDatabase(movieId)
+	s.Equal(expectedMovie, updatedMovie, "Should return updated movie")
+
 	clearDatabase()
 }
 
