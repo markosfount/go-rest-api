@@ -144,7 +144,7 @@ func (s *AppSuite) TestCreateMovie() {
 
 	response, err := http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
 	s.NoErrorf(err, "Should get no error from request initially")
-	s.EqualValuesf(http.StatusCreated, response.StatusCode, "Expected status to created")
+	s.EqualValuesf(http.StatusCreated, response.StatusCode, "Expected status to be: Created")
 
 	responseData, readErr := io.ReadAll(response.Body)
 	if readErr != nil {
@@ -162,13 +162,12 @@ func (s *AppSuite) TestCreateMovie() {
 	savedMovie := getMovieFromDatabase(movieId)
 	s.Equal(expectedMovie, savedMovie, "Should return created movie")
 
-	// Try to create already existing movie
-	clearDatabase()
-	createMovieInDatabase(model.Movie{MovieId: "1", MovieName: "name1"})
+	// Create movie with malformed request
+	body = []byte("{asf}")
 
 	response, err = http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
 	s.NoErrorf(err, "Should get no error from request initially")
-	s.EqualValuesf(http.StatusConflict, response.StatusCode, "Expected status to be conflict")
+	s.EqualValuesf(http.StatusBadRequest, response.StatusCode, "Expected status to be: Bad Request")
 
 	responseData, readErr = io.ReadAll(response.Body)
 	if readErr != nil {
@@ -176,12 +175,57 @@ func (s *AppSuite) TestCreateMovie() {
 	}
 	defer response.Body.Close()
 	responseMessage := model.ResponseMessage{}
-	expectedMessage := model.ResponseMessage{Message: "A movie with the provided id already exists"}
+	expectedMessage := model.ResponseMessage{Message: "Could not parse request body"}
 	jsonErr = json.Unmarshal(responseData, &responseMessage)
 	if jsonErr != nil {
 		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
 	}
-	s.Equal(expectedMessage, responseMessage, "Should return message for conflict")
+	s.Equal(expectedMessage, responseMessage, "Should return message for: Bad Request")
+	clearDatabase()
+
+	// Create movie with missing id in body
+	movieToCreate = model.Movie{MovieName: "name1"}
+	body, jsonErr = json.Marshal(movieToCreate)
+
+	response, err = http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusBadRequest, response.StatusCode, "Expected status to be: Bad Request")
+
+	responseData, readErr = io.ReadAll(response.Body)
+	if readErr != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", readErr)
+	}
+	defer response.Body.Close()
+	responseMessage = model.ResponseMessage{}
+	expectedMessage = model.ResponseMessage{Message: "You are missing movieID or movieName parameter"}
+	jsonErr = json.Unmarshal(responseData, &responseMessage)
+	if jsonErr != nil {
+		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
+	}
+	s.Equal(expectedMessage, responseMessage, "Should return message for: Bad Request")
+	clearDatabase()
+
+	// Try to create already existing movie
+	createMovieInDatabase(model.Movie{MovieId: "1", MovieName: "name1"})
+	movieToCreate = model.Movie{MovieId: movieId, MovieName: "name2"}
+	body, jsonErr = json.Marshal(movieToCreate)
+
+	response, err = http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusConflict, response.StatusCode, "Expected status to be: Conflict")
+
+	responseData, readErr = io.ReadAll(response.Body)
+	if readErr != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", readErr)
+	}
+	defer response.Body.Close()
+	responseMessage = model.ResponseMessage{}
+	expectedMessage = model.ResponseMessage{Message: "A movie with the provided id already exists"}
+	jsonErr = json.Unmarshal(responseData, &responseMessage)
+	if jsonErr != nil {
+		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
+	}
+	s.Equal(expectedMessage, responseMessage, "Should return message for: Conflict")
 
 	clearDatabase()
 }
@@ -201,7 +245,7 @@ func (s *AppSuite) TestUpdateMovie() {
 	response, err := http.DefaultClient.Do(req)
 
 	s.NoErrorf(err, "Should get no error from request initially")
-	s.EqualValuesf(http.StatusNotFound, response.StatusCode, "Expected status to be not found")
+	s.EqualValuesf(http.StatusNotFound, response.StatusCode, "Expected status to be: Not found")
 
 	responseData, readErr := io.ReadAll(response.Body)
 	if readErr != nil {
@@ -213,7 +257,7 @@ func (s *AppSuite) TestUpdateMovie() {
 	if jsonErr != nil {
 		log.Fatalf("Got error when parsing response. error: %s", jsonErr)
 	}
-	s.Equal(expectedMessage, responseMessage, "Should return message for not found")
+	s.Equal(expectedMessage, responseMessage, "Should return message for: Not found")
 
 	// Mismatch between path param and body
 	movieToUpdate = model.Movie{MovieId: movieId, MovieName: "name1"}
@@ -228,7 +272,7 @@ func (s *AppSuite) TestUpdateMovie() {
 	response, err = http.DefaultClient.Do(req)
 
 	s.NoErrorf(err, "Should get no error from request initially")
-	s.EqualValuesf(http.StatusBadRequest, response.StatusCode, "Expected status to be bad request")
+	s.EqualValuesf(http.StatusBadRequest, response.StatusCode, "Expected status to be: Bad request")
 
 	responseData, readErr = io.ReadAll(response.Body)
 	if readErr != nil {
@@ -258,7 +302,7 @@ func (s *AppSuite) TestUpdateMovie() {
 	response, err = http.DefaultClient.Do(req)
 
 	s.NoErrorf(err, "Should get no error from request initially")
-	s.EqualValuesf(http.StatusOK, response.StatusCode, "Expected status to be ok")
+	s.EqualValuesf(http.StatusOK, response.StatusCode, "Expected status to be: Ok")
 
 	responseData, readErr = io.ReadAll(response.Body)
 	if readErr != nil {

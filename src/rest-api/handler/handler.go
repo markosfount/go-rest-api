@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"log"
@@ -22,17 +21,19 @@ func (env Env) TestHandler(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusOK, responseBytes)
 }
 
-// TODO log errors
 func (env Env) GetMovies(res http.ResponseWriter, req *http.Request) {
 	movies, err := model.GetMovies(env.Db)
 	if err != nil {
-		log.Print(err)
-		http.Error(res, http.StatusText(500), 500)
+		log.Printf("Error when getting movies from db: %s\n", err)
+		responseBytes := createResponse(false, "Error when retrieving data")
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
+		return
 	}
 
 	movieJSON, err := json.Marshal(&movies)
 	if err != nil {
-		responseBytes := createResponse(false, "Error parsing the movie data")
+		log.Printf("Error when marshalling the response data: %s\n", err)
+		responseBytes := createResponse(false, "Error creating response")
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
@@ -62,7 +63,8 @@ func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
 
 	movieJSON, err := json.Marshal(&movie)
 	if err != nil {
-		responseBytes := createResponse(false, "Error parsing the movie data")
+		log.Printf("Error when marshalling the response data: %s\n", err)
+		responseBytes := createResponse(false, "Error creating response")
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
@@ -78,14 +80,15 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	err := json.NewDecoder(payload).Decode(&movie)
 	if err != nil {
-		responseBytes := createResponse(false, "Error parsing the movie data")
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
+		log.Printf("Error when unmarshalling the request body: %s\n", err)
+		responseBytes := createResponse(false, "Could not parse request body")
+		utils.ReturnJsonResponse(res, http.StatusBadRequest, responseBytes)
 		return
 	}
 
 	if movie.MovieId == "" || movie.MovieName == "" {
 		responseBytes := createResponse(false, "You are missing movieID or movieName parameter")
-		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
+		utils.ReturnJsonResponse(res, http.StatusBadRequest, responseBytes)
 		return
 	}
 	createdMovie, err := model.CreateMovie(&movie, env.Db)
@@ -97,16 +100,16 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 			utils.ReturnJsonResponse(res, http.StatusConflict, responseBytes)
 			return
 		}
-		responseBytes := createResponse(false, "Unexpected error when creating response")
-		fmt.Printf("Unable to create movie in the database: error: %v\n", err)
+		responseBytes := createResponse(false, "Unexpected error when creating data")
+		log.Printf("Unable to create movie in the database: error: %s\n", err)
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 
 	movieJSON, err := json.Marshal(createdMovie)
 	if err != nil {
-		responseBytes := createResponse(false, "Error parsing the movie data")
-		fmt.Printf("Unable to parse movie dao to json: error: %v\n", err)
+		responseBytes := createResponse(false, "Error creating response")
+		log.Printf("Error when marshalling the response data: %s\n", err)
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
@@ -133,7 +136,8 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	err := json.NewDecoder(payload).Decode(&movie)
 	if err != nil {
-		responseBytes := createResponse(false, "Error parsing the movie data")
+		log.Printf("Error when unmarshalling the request body: %s\n", err)
+		responseBytes := createResponse(false, "Could not parse request body")
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
@@ -153,15 +157,15 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 		responseBytes := createResponse(false, "Unexpected error when updating movie.")
-		fmt.Printf("Unable to update movie in the database: error: %v\n", err)
+		log.Printf("Unable to update movie in the database: error: %s\n", err)
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 
 	movieJSON, err := json.Marshal(updatedMovie)
 	if err != nil {
-		responseBytes := createResponse(false, "Error parsing the movie data")
-		fmt.Printf("Unable to parse movie dao to json: error: %v\n", err)
+		responseBytes := createResponse(false, "Error creating response")
+		log.Printf("Error when marshalling the response data: %s\n", err)
 		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
