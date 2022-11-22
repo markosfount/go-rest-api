@@ -42,14 +42,6 @@ func (env Env) GetMovies(res http.ResponseWriter, req *http.Request) {
 }
 
 func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
-	//	if _, ok := req.URL.Query()["movieId"]; !ok {
-	//		HandlerMessage := []byte(`{
-	//	"success": false,
-	//	"message": "Μovie movieId not provided",
-	//}`)
-	//		utils.ReturnJsonResponse(res, http.StatusBadRequest, HandlerMessage)
-	//		return
-	//	}
 	vars := mux.Vars(req)
 	movieId := vars["movieId"]
 
@@ -118,14 +110,6 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 }
 
 func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
-	//	if _, ok := req.URL.Query()["movieId"]; !ok {
-	//		responseBytes := []byte(`{
-	//	"success": false,
-	//	"message": "Μovie movieId not provided",
-	//}`)
-	//		utils.ReturnJsonResponse(res, http.StatusBadRequest, responseBytes)
-	//		return
-	//	}
 	vars := mux.Vars(req)
 	movieId := vars["movieId"]
 
