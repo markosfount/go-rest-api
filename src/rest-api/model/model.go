@@ -117,3 +117,21 @@ func UpdateMovie(movie *Movie, db *sql.DB) (*Movie, error) {
 	}
 	return movie, nil
 }
+
+func DeleteMovie(db *sql.DB, movieId string) error {
+	fmt.Printf("Deleting movie with movieId %s\n", movieId)
+
+	res, err := db.Exec("DELETE FROM movies WHERE movieID = $1;", movieId)
+
+	if err != nil {
+		return err
+	}
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return &NotFoundError{}
+	}
+	return nil
+}

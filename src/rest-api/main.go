@@ -39,6 +39,7 @@ func main() {
 	r.HandleFunc("/movies/{movieId}", env.GetMovie).Methods(http.MethodGet)
 	r.HandleFunc("/movies", env.AddMovie).Methods(http.MethodPost)
 	r.HandleFunc("/movies/{movieId}", env.UpdateMovie).Methods(http.MethodPut)
+	r.HandleFunc("/movies/{movieId}", env.DeleteMovie).Methods(http.MethodDelete)
 	http.Handle("/", r)
 
 	// listen port

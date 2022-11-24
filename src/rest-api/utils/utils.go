@@ -10,3 +10,8 @@ func ReturnJsonResponse(res http.ResponseWriter, httpCode int, resMessage []byte
 	res.WriteHeader(httpCode)
 	res.Write(resMessage)
 }
+
+func ReturnEmptyResponse(res http.ResponseWriter, httpCode int) {
+	res.Header().Set("Content-type", "application/json")
+	res.WriteHeader(httpCode)
+}
