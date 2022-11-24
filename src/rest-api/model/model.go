@@ -70,6 +70,9 @@ func GetMovie(db *sql.DB, movieId string) (*Movie, error) {
 		Scan(&movie.MovieId, &movie.MovieName)
 
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &NotFoundError{}
+		}
 		return nil, err
 	}
 

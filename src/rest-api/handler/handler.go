@@ -48,8 +48,15 @@ func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
 	// fixme specific error for not found
 	movie, err := model.GetMovie(env.Db, movieId)
 	if err != nil {
-		responseBytes := createResponse(false, "No movie with provided id exists")
-		utils.ReturnJsonResponse(res, http.StatusNotFound, responseBytes)
+		var nferr *model.NotFoundError
+		if errors.As(err, &nferr) {
+			responseBytes := createResponse(false, "No movie with provided id exists")
+			utils.ReturnJsonResponse(res, http.StatusNotFound, responseBytes)
+			return
+		}
+		log.Printf("Error when getting movie from db: %s\n", err)
+		responseBytes := createResponse(false, "Error when retrieving requested movie")
+		utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
 		return
 	}
 
@@ -156,6 +163,8 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 
 	utils.ReturnJsonResponse(res, http.StatusOK, movieJSON)
 }
+
+// todo delete endpoint
 
 func createResponse(success bool, message string) []byte {
 	response := model.ResponseMessage{Success: success, Message: message}
