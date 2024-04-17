@@ -15,3 +15,8 @@ func ReturnEmptyResponse(res http.ResponseWriter, httpCode int) {
 	res.Header().Set("Content-type", "application/json")
 	res.WriteHeader(httpCode)
 }
+
+func ReturnUnauthorizedResponse(res http.ResponseWriter) {
+	res.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+	http.Error(res, "Unauthorized", http.StatusUnauthorized)
+}

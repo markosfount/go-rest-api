@@ -35,7 +35,7 @@ func main() {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/ping", env.TestHandler).Methods(http.MethodGet)
-	r.HandleFunc("/movies", env.GetMovies).Methods(http.MethodGet)
+	r.HandleFunc("/movies", env.BasicAuth(env.GetMovies)).Methods(http.MethodGet)
 	r.HandleFunc("/movies/{movieId}", env.GetMovie).Methods(http.MethodGet)
 	r.HandleFunc("/movies", env.AddMovie).Methods(http.MethodPost)
 	r.HandleFunc("/movies/{movieId}", env.UpdateMovie).Methods(http.MethodPut)

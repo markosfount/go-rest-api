@@ -11,6 +11,11 @@ type Movie struct {
 	MovieName string `json:"title"`
 }
 
+type User struct {
+	Username string
+	Password string
+}
+
 type ResponseMessage struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
@@ -28,6 +33,21 @@ type NotFoundError struct {
 
 func (c *NotFoundError) Error() string {
 	return "Movie not found."
+}
+
+func GetUser(db *sql.DB, username string) (*User, error) {
+	user := User{}
+	err := db.QueryRow("SELECT username, password FROM users WHERE username = $1;", username).
+		Scan(user.Username, user.Password)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &NotFoundError{}
+		}
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 // TODO handle not found in all

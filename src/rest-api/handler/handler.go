@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"crypto/sha256"
+	"crypto/subtle"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -19,6 +21,39 @@ type Env struct {
 func (env Env) TestHandler(res http.ResponseWriter, req *http.Request) {
 	responseBytes := createResponse(true, "The server is running properly")
 	utils.ReturnJsonResponse(res, http.StatusOK, responseBytes)
+}
+
+func (env Env) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		username, password, ok := req.BasicAuth()
+		if ok {
+			//usernameHash := sha256.Sum256([]byte(username))
+			user, err := model.GetUser(env.Db, username)
+			if err != nil {
+				var nferr *model.NotFoundError
+				if errors.As(err, &nferr) {
+					utils.ReturnUnauthorizedResponse(res)
+					return
+				}
+				log.Printf("Error when getting user from db: %s\n", err)
+				responseBytes := createResponse(false, "Error when accessing user list. Please try again")
+				utils.ReturnJsonResponse(res, http.StatusInternalServerError, responseBytes)
+				return
+			}
+			passwordHash := sha256.Sum256([]byte(password))
+			//expectedUsernameHash := sha256.Sum256([]byte(app.auth.username))
+			expectedPasswordHash := sha256.Sum256([]byte(user.Password))
+
+			//usernameMatch := (subtle.ConstantTimeCompare(usernameHash[:], expectedUsernameHash[:]) == 1)
+			passwordMatch := subtle.ConstantTimeCompare(passwordHash[:], expectedPasswordHash[:]) == 1
+
+			if passwordMatch {
+				next.ServeHTTP(res, req)
+				return
+			}
+		}
+		utils.ReturnUnauthorizedResponse(res)
+	})
 }
 
 func (env Env) GetMovies(res http.ResponseWriter, req *http.Request) {

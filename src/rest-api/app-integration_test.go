@@ -93,6 +93,48 @@ func (s *AppSuite) TestGetAllMovies() {
 	clearDatabase()
 }
 
+func (s *AppSuite) TestAuthentication() {
+	// GET when no authorization provided
+
+	response, err := http.Get(apiHost + "/movies")
+	s.NoErrorf(err, "Should get no error from request initally")
+	s.EqualValuesf(http.StatusUnauthorized, response.StatusCode, "Expected status to be: Unauthorized")
+
+	responseData, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", err)
+	}
+	defer response.Body.Close()
+	err = json.Unmarshal(responseData, &movies)
+	if err != nil {
+		log.Fatalf("Got error when parsing response. error: %s", err)
+	}
+	s.ElementsMatchf([]model.Movie{}, movies, "Should return empty list")
+
+	// GET when movies exist in db
+	createMovieInDatabase(model.Movie{MovieId: "1", MovieName: "name1"})
+	createMovieInDatabase(model.Movie{MovieId: "2", MovieName: "name2"})
+
+	response, err = http.Get(apiHost + "/movies")
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusOK, response.StatusCode, "Expected status to be ok")
+
+	responseData, err = io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", err)
+	}
+	defer response.Body.Close()
+	movies = []model.Movie{}
+	expectedMovies := []model.Movie{{MovieId: "1", MovieName: "name1"}, {MovieId: "2", MovieName: "name2"}}
+	err = json.Unmarshal(responseData, &movies)
+	if err != nil {
+		log.Fatalf("Got error when parsing response. error: %s", err)
+	}
+	s.ElementsMatchf(expectedMovies, movies, "Should return two movies")
+
+	clearDatabase()
+}
+
 func (s *AppSuite) TestGetMovie() {
 	// GET when movie does not exist
 
@@ -371,6 +413,14 @@ func createMovieInDatabase(movie model.Movie) {
 	}
 }
 
+func createUserInDatabase(username, password string) {
+	sqlStatement := `INSERT INTO "users" (username, password) VALUES ($1, $2)`
+	_, err := db.Exec(sqlStatement, username, password)
+	if err != nil {
+		log.Fatalf("Failed creating user in db for testing: %s", err)
+	}
+}
+
 func getMovieFromDatabase(movieId string) model.Movie {
 	//sqlStatement := `SELECT FROM "movies" WHERE movieId = $1
 	movie := model.Movie{}
@@ -385,9 +435,9 @@ func getMovieFromDatabase(movieId string) model.Movie {
 }
 
 func clearDatabase() {
-	sqlStatement := `DELETE FROM "movies";`
+	sqlStatement := `DELETE FROM "movies"; DELETE FROM "users";`
 	_, err := db.Exec(sqlStatement)
 	if err != nil {
-		log.Fatalf("Failed creating movie in db for testing: %s", err)
+		log.Fatalf("Failed clearing database: %s", err)
 	}
 }
