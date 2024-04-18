@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+
 func SetupDB(dbHost, dbUser, dbPassword, dbName string) *sql.DB {
 	dbInfo := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbUser, dbPassword, dbName)
 	db, err := sql.Open("postgres", dbInfo)

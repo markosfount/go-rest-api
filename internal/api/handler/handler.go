@@ -15,21 +15,21 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type Env struct {
+type Handler struct {
 	Db *sql.DB
 }
 
-func (env Env) TestHandler(res http.ResponseWriter, req *http.Request) {
+func (handler Handler) PingHandler(res http.ResponseWriter, req *http.Request) {
 	responseBytes := createResponse(true, "The server is running properly")
 	utils.ReturnJsonResponse(res, http.StatusOK, responseBytes)
 }
 
-func (env Env) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
+func (handler Handler) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		username, password, ok := req.BasicAuth()
 		if ok {
 			//usernameHash := sha256.Sum256([]byte(username))
-			user, err := model.GetUser(env.Db, username)
+			user, err := model.GetUser(handler.Db, username)
 			if err != nil {
 				var nferr *model.NotFoundError
 				if errors.As(err, &nferr) {
@@ -57,8 +57,8 @@ func (env Env) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
-func (env Env) GetMovies(res http.ResponseWriter, req *http.Request) {
-	movies, err := model.GetMovies(env.Db)
+func (handler Handler) GetMovies(res http.ResponseWriter, req *http.Request) {
+	movies, err := model.GetMovies(handler.Db)
 	if err != nil {
 		log.Printf("Error when getting movies from db: %s\n", err)
 		responseBytes := createResponse(false, "Error when retrieving data")
@@ -77,11 +77,11 @@ func (env Env) GetMovies(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusOK, movieJSON)
 }
 
-func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
+func (handler Handler) GetMovie(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	movieId := vars["movieId"]
 
-	movie, err := model.GetMovie(env.Db, movieId)
+	movie, err := model.GetMovie(handler.Db, movieId)
 	if err != nil {
 		var nferr *model.NotFoundError
 		if errors.As(err, &nferr) {
@@ -106,7 +106,7 @@ func (env Env) GetMovie(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusOK, movieJSON)
 }
 
-func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
+func (handler Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 	var movie model.Movie
 
 	payload := req.Body
@@ -125,7 +125,7 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 		utils.ReturnJsonResponse(res, http.StatusBadRequest, responseBytes)
 		return
 	}
-	createdMovie, err := model.CreateMovie(&movie, env.Db)
+	createdMovie, err := model.CreateMovie(&movie, handler.Db)
 
 	if err != nil {
 		var cerr *model.ConflictError
@@ -151,7 +151,7 @@ func (env Env) AddMovie(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusCreated, movieJSON)
 }
 
-func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
+func (handler Handler) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	movieId := vars["movieId"]
 
@@ -173,7 +173,7 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 		utils.ReturnJsonResponse(res, http.StatusBadRequest, responseBytes)
 		return
 	}
-	updatedMovie, err := model.UpdateMovie(&movie, env.Db)
+	updatedMovie, err := model.UpdateMovie(&movie, handler.Db)
 
 	if err != nil {
 		var nferr *model.NotFoundError
@@ -199,11 +199,11 @@ func (env Env) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusOK, movieJSON)
 }
 
-func (env Env) DeleteMovie(res http.ResponseWriter, req *http.Request) {
+func (handler Handler) DeleteMovie(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	movieId := vars["movieId"]
 
-	err := model.DeleteMovie(env.Db, movieId)
+	err := model.DeleteMovie(handler.Db, movieId)
 	if err != nil {
 		var nferr *model.NotFoundError
 		if errors.As(err, &nferr) {

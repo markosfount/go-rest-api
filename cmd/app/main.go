@@ -20,10 +20,10 @@ func main() {
 	db := application.SetupDB(dbHost, dbUser, dbPassword, dbName)
 
 	// Create an instance of Env containing the connection pool.
-	env := &handler.Env{Db: db}
+	env := &handler.Handler{Db: db}
 	r := mux.NewRouter()
 
-	r.HandleFunc("/ping", env.TestHandler).Methods(http.MethodGet)
+	r.HandleFunc("/ping", env.PingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/movies", env.BasicAuth(env.GetMovies)).Methods(http.MethodGet)
 	r.HandleFunc("/movies/{movieId}", env.GetMovie).Methods(http.MethodGet)
 	r.HandleFunc("/movies", env.AddMovie).Methods(http.MethodPost)
