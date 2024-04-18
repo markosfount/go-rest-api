@@ -6,12 +6,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/gorilla/mux"
-	_ "github.com/lib/pq"
 	"log"
 	"net/http"
-	"rest_api/model"
-	"rest_api/utils"
+	"rest_api/internal/api/model"
+	"rest_api/internal/api/utils"
+
+	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 )
 
 type Env struct {

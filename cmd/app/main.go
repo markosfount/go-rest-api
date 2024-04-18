@@ -1,34 +1,23 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	"github.com/gorilla/mux"
-	"log"
 	"net/http"
 	"os"
-	"rest_api/handler"
+	"rest_api/internal/api/application"
+	"rest_api/internal/api/handler"
+
+	"github.com/gorilla/mux"
 )
 
-var dbHost = getEnv("DB_HOST", "localhost")
-var dbUser = getEnv("DB_USER", "user")
-var dbPassword = getEnv("DB_PASS", "password")
-var dbName = getEnv("DB_NAME", "movies")
-
-func setupDB() *sql.DB {
-	dbInfo := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbUser, dbPassword, dbName)
-	db, err := sql.Open("postgres", dbInfo)
-
-	if err != nil {
-		log.Fatalf("test init failed: %s", err)
-	}
-
-	return db
-}
-
 func main() {
+	dbHost := application.GetEnv("DB_HOST", "localhost")
+	dbUser := application.GetEnv("DB_USER", "user")
+	dbPassword := application.GetEnv("DB_PASS", "password")
+	dbName := application.GetEnv("DB_NAME", "movies")
+
 	// Initialise the connection pool.
-	db := setupDB()
+	db := application.SetupDB(dbHost, dbUser, dbPassword, dbName)
 
 	// Create an instance of Env containing the connection pool.
 	env := &handler.Env{Db: db}
@@ -50,11 +39,4 @@ func main() {
 		os.Exit(1)
 	}
 
-}
-
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
 }
