@@ -3,33 +3,34 @@ package handler
 import (
 	"crypto/sha256"
 	"crypto/subtle"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"rest_api/internal/api/model"
 	"rest_api/internal/api/utils"
+	"rest_api/internal/data"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
 type Handler struct {
-	Db *sql.DB
+	UserRepository data.UserRepository
+	MovieRepository data.MovieRepository
 }
 
-func (handler Handler) PingHandler(res http.ResponseWriter, req *http.Request) {
+func (h *Handler) PingHandler(res http.ResponseWriter, req *http.Request) {
 	responseBytes := createResponse(true, "The server is running properly")
 	utils.ReturnJsonResponse(res, http.StatusOK, responseBytes)
 }
 
-func (handler Handler) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
+func (h *Handler) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		username, password, ok := req.BasicAuth()
 		if ok {
 			//usernameHash := sha256.Sum256([]byte(username))
-			user, err := model.GetUser(handler.Db, username)
+			user, err := h.UserRepository.GetUser(username)
 			if err != nil {
 				var nferr *model.NotFoundError
 				if errors.As(err, &nferr) {
@@ -57,8 +58,8 @@ func (handler Handler) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
-func (handler Handler) GetMovies(res http.ResponseWriter, req *http.Request) {
-	movies, err := model.GetMovies(handler.Db)
+func (h *Handler) GetMovies(res http.ResponseWriter, req *http.Request) {
+	movies, err := h.MovieRepository.GetMovies()
 	if err != nil {
 		log.Printf("Error when getting movies from db: %s\n", err)
 		responseBytes := createResponse(false, "Error when retrieving data")
@@ -77,11 +78,11 @@ func (handler Handler) GetMovies(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusOK, movieJSON)
 }
 
-func (handler Handler) GetMovie(res http.ResponseWriter, req *http.Request) {
+func (h *Handler) GetMovie(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	movieId := vars["movieId"]
 
-	movie, err := model.GetMovie(handler.Db, movieId)
+	movie, err := h.MovieRepository.GetMovie(movieId)
 	if err != nil {
 		var nferr *model.NotFoundError
 		if errors.As(err, &nferr) {
@@ -106,7 +107,7 @@ func (handler Handler) GetMovie(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusOK, movieJSON)
 }
 
-func (handler Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
+func (h Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 	var movie model.Movie
 
 	payload := req.Body
@@ -125,7 +126,7 @@ func (handler Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 		utils.ReturnJsonResponse(res, http.StatusBadRequest, responseBytes)
 		return
 	}
-	createdMovie, err := model.CreateMovie(&movie, handler.Db)
+	createdMovie, err := h.MovieRepository.CreateMovie(&movie)
 
 	if err != nil {
 		var cerr *model.ConflictError
@@ -151,7 +152,7 @@ func (handler Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusCreated, movieJSON)
 }
 
-func (handler Handler) UpdateMovie(res http.ResponseWriter, req *http.Request) {
+func (h Handler) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	movieId := vars["movieId"]
 
@@ -173,7 +174,7 @@ func (handler Handler) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 		utils.ReturnJsonResponse(res, http.StatusBadRequest, responseBytes)
 		return
 	}
-	updatedMovie, err := model.UpdateMovie(&movie, handler.Db)
+	updatedMovie, err := h.MovieRepository.UpdateMovie(&movie)
 
 	if err != nil {
 		var nferr *model.NotFoundError
@@ -199,11 +200,11 @@ func (handler Handler) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	utils.ReturnJsonResponse(res, http.StatusOK, movieJSON)
 }
 
-func (handler Handler) DeleteMovie(res http.ResponseWriter, req *http.Request) {
+func (h Handler) DeleteMovie(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	movieId := vars["movieId"]
 
-	err := model.DeleteMovie(handler.Db, movieId)
+	err := h.MovieRepository.DeleteMovie(movieId)
 	if err != nil {
 		var nferr *model.NotFoundError
 		if errors.As(err, &nferr) {
