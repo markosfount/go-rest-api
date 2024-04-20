@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"rest_api/internal/api/application"
@@ -17,7 +18,7 @@ func main() {
 	dbUser := application.GetEnv("DB_USER", "user")
 	dbPassword := application.GetEnv("DB_PASS", "password")
 	dbName := application.GetEnv("DB_NAME", "movies")
-
+	log.Println("ospe")
 	// Initialise the connection pool.
 	db := application.SetupDB(dbHost, dbUser, dbPassword, dbName)
 
@@ -28,12 +29,13 @@ func main() {
 
 	h := &handler.Handler{
 		UserRepository: userRepository,
-		MovieService: movieService,
+		MovieService:   movieService,
 	}
 	r := mux.NewRouter()
 
 	r.HandleFunc("/ping", h.PingHandler).Methods(http.MethodGet)
-	r.HandleFunc("/movies", h.BasicAuth(h.GetMovies)).Methods(http.MethodGet)
+	//r.HandleFunc("/movies", h.BasicAuth(h.GetMovies)).Methods(http.MethodGet)
+	r.HandleFunc("/movies", h.GetMovies).Methods(http.MethodGet)
 	r.HandleFunc("/movies/{movieId}", h.GetMovie).Methods(http.MethodGet)
 	r.HandleFunc("/movies", h.AddMovie).Methods(http.MethodPost)
 	r.HandleFunc("/movies/{movieId}", h.UpdateMovie).Methods(http.MethodPut)

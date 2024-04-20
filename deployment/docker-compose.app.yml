@@ -3,7 +3,8 @@ version: '3'
 services:
   rest-api:
     build:
-      context: .
+      context: ..
+      dockerfile: ./deployment/Dockerfile
     depends_on:
       - postgresql
     environment:

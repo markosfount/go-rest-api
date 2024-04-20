@@ -1,13 +1,13 @@
-FROM golang:1.19-alpine
+FROM golang:1.22-alpine
 
 RUN set -ex; \
     apk update
 
-COPY src ./src
+WORKDIR /app
 
-WORKDIR src/rest-api
+COPY ./ /app
 
-RUN go build -o /output
+RUN pwd && ls -lah && go build -o /output ./cmd/app
 
 EXPOSE 3000
 

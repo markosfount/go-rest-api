@@ -24,7 +24,7 @@ const (
 var databaseHost = application.GetEnv("DB_HOST", "localhost")
 var apiHost = application.GetEnv("API_HOST", "http://localhost:3000")
 
-var databaseUser = application.GetEnv("DB_USER", "user")
+var databaseUser = application.GetEnv("DB_USER", "root")
 var databasePassword = application.GetEnv("DB_PASS", "password")
 
 var db *sql.DB
@@ -54,9 +54,8 @@ func TestAppSuite(t *testing.T) {
 
 func (s *AppSuite) TestGetAllMovies() {
 	// GET when no movies exist
-
 	response, err := http.Get(apiHost + "/movies")
-	s.NoErrorf(err, "Should get no error from request initally")
+	s.NoErrorf(err, "Should get no error from request initially")
 	s.EqualValuesf(http.StatusOK, response.StatusCode, "Expected status to be ok")
 
 	responseData, err := io.ReadAll(response.Body)
@@ -139,7 +138,6 @@ func (s *AppSuite) TestGetAllMovies() {
 
 func (s *AppSuite) TestGetMovie() {
 	// GET when movie does not exist
-
 	response, err := http.Get(apiHost + "/movies/1")
 	s.NoErrorf(err, "Should get no error from request initially")
 	s.EqualValuesf(http.StatusNotFound, response.StatusCode, "Expected status to be not found")
