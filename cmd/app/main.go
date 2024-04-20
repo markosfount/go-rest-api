@@ -6,6 +6,7 @@ import (
 	"os"
 	"rest_api/internal/api/application"
 	"rest_api/internal/api/handler"
+	"rest_api/internal/api/service"
 	"rest_api/internal/data"
 
 	"github.com/gorilla/mux"
@@ -23,18 +24,20 @@ func main() {
 	userRepository := data.UserRepository{DB: db}
 	movieRepository := data.MovieRepository{DB: db}
 
-	handler := &handler.Handler{
+	movieService := service.MovieService{MovieRepository: movieRepository}
+
+	h := &handler.Handler{
 		UserRepository: userRepository,
-		MovieRepository: movieRepository,
+		MovieService: movieService,
 	}
 	r := mux.NewRouter()
 
-	r.HandleFunc("/ping", handler.PingHandler).Methods(http.MethodGet)
-	r.HandleFunc("/movies", handler.BasicAuth(handler.GetMovies)).Methods(http.MethodGet)
-	r.HandleFunc("/movies/{movieId}", handler.GetMovie).Methods(http.MethodGet)
-	r.HandleFunc("/movies", handler.AddMovie).Methods(http.MethodPost)
-	r.HandleFunc("/movies/{movieId}", handler.UpdateMovie).Methods(http.MethodPut)
-	r.HandleFunc("/movies/{movieId}", handler.DeleteMovie).Methods(http.MethodDelete)
+	r.HandleFunc("/ping", h.PingHandler).Methods(http.MethodGet)
+	r.HandleFunc("/movies", h.BasicAuth(h.GetMovies)).Methods(http.MethodGet)
+	r.HandleFunc("/movies/{movieId}", h.GetMovie).Methods(http.MethodGet)
+	r.HandleFunc("/movies", h.AddMovie).Methods(http.MethodPost)
+	r.HandleFunc("/movies/{movieId}", h.UpdateMovie).Methods(http.MethodPut)
+	r.HandleFunc("/movies/{movieId}", h.DeleteMovie).Methods(http.MethodDelete)
 	http.Handle("/", r)
 
 	// listen port

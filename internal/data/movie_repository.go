@@ -53,7 +53,7 @@ func (r *MovieRepository) GetMovie(movieId string) (*model.Movie, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &model.NotFoundError{}
+			return nil, ErrRecordNotFound
 		}
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (r *MovieRepository) CreateMovie(movie *model.Movie) (*model.Movie, error) 
 		pqErr := err.(*pq.Error)
 		switch pqErr.Code {
 		case "23505":
-			return nil, &model.ConflictError{}
+			return nil, ErrRecordExists
 		default:
 			return nil, err
 		}
