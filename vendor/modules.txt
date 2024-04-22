@@ -16,13 +16,17 @@ github.com/lib/pq/scram
 github.com/pmezard/go-difflib/difflib
 # github.com/rogpeppe/go-internal v1.8.0
 ## explicit; go 1.11
-# github.com/stretchr/testify v1.7.1
-## explicit; go 1.13
+# github.com/stretchr/objx v0.5.2
+## explicit; go 1.20
+github.com/stretchr/objx
+# github.com/stretchr/testify v1.9.0
+## explicit; go 1.17
 github.com/stretchr/testify/assert
+github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
 github.com/stretchr/testify/suite
 # gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
 ## explicit; go 1.11
-# gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+# gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3

@@ -61,7 +61,7 @@ func (h *Handler) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (h *Handler) GetMovies(res http.ResponseWriter, _ *http.Request) {
-	movies, err := h.MovieService.GetMovies()
+	movies, err := h.MovieService.GetAll()
 	if err != nil {
 		returnErrorResponse("Error when retrieving data", http.StatusInternalServerError, res)
 	}
@@ -78,7 +78,7 @@ func (h *Handler) GetMovie(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	movieId := vars["movieId"]
 
-	movie, err := h.MovieService.MovieRepository.GetMovie(movieId)
+	movie, err := h.MovieService.MovieRepository.Get(movieId)
 	if err != nil {
 		var nfErr *model.NotFoundError
 		if errors.As(err, &nfErr) {
@@ -117,7 +117,7 @@ func (h *Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 		returnErrorResponse("Missing movieID or movieName parameter", http.StatusBadRequest, res)
 		return
 	}
-	createdMovie, err := h.MovieService.CreateMovie(movie)
+	createdMovie, err := h.MovieService.Create(movie)
 
 	if err != nil {
 		var cErr *model.ConflictError
@@ -159,7 +159,7 @@ func (h *Handler) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 		returnErrorResponse("Mismatch between movieId in query parameter and request body", http.StatusBadRequest, res)
 		return
 	}
-	updatedMovie, err := h.MovieService.UpdateMovie(movie)
+	updatedMovie, err := h.MovieService.Update(movie)
 
 	if err != nil {
 		var nfErr *model.NotFoundError
@@ -187,7 +187,7 @@ func (h *Handler) DeleteMovie(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	movieId := vars["movieId"]
 
-	err := h.MovieService.DeleteMovie(movieId)
+	err := h.MovieService.Delete(movieId)
 	if err != nil {
 		returnErrorResponse("Error when deleting requested movie", http.StatusInternalServerError, res)
 		return

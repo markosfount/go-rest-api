@@ -8,20 +8,20 @@ import (
 )
 
 type MovieService struct {
-	MovieRepository data.MovieRepository
+	MovieRepository data.Repository[*model.Movie]
 }
 
-func (s *MovieService) GetMovies() ([]model.Movie, error) {
-	movies, err := s.MovieRepository.GetMovies()
+func (s *MovieService) GetAll() ([]*model.Movie, error) {
+	movies, err := s.MovieRepository.GetAll()
 	if err != nil {
 		slog.Error("Error when getting movies from db: %s\n", err)
-		return []model.Movie{}, err
+		return []*model.Movie{}, err
 	}
 	return movies, nil
 }
 
-func (s *MovieService) GetMovie(movieId string) (*model.Movie, error) {
-	movie, err := s.MovieRepository.GetMovie(movieId)
+func (s *MovieService) Get(movieId string) (*model.Movie, error) {
+	movie, err := s.MovieRepository.Get(movieId)
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
 			return nil, model.NotFoundError{}
@@ -32,8 +32,8 @@ func (s *MovieService) GetMovie(movieId string) (*model.Movie, error) {
 	return movie, nil
 }
 
-func (s *MovieService) CreateMovie(movie *model.Movie) (*model.Movie, error) {
-	createdMovie, err := s.MovieRepository.CreateMovie(movie)
+func (s *MovieService) Create(movie *model.Movie) (*model.Movie, error) {
+	createdMovie, err := s.MovieRepository.Create(movie)
 
 	if err != nil {
 		if errors.Is(err, data.ErrRecordExists) {
@@ -45,8 +45,8 @@ func (s *MovieService) CreateMovie(movie *model.Movie) (*model.Movie, error) {
 	return createdMovie, nil
 }
 
-func (s *MovieService) UpdateMovie(movie *model.Movie) (*model.Movie, error) {
-	updatedMovie, err := s.MovieRepository.UpdateMovie(movie)
+func (s *MovieService) Update(movie *model.Movie) (*model.Movie, error) {
+	updatedMovie, err := s.MovieRepository.Update(movie)
 
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
@@ -58,8 +58,8 @@ func (s *MovieService) UpdateMovie(movie *model.Movie) (*model.Movie, error) {
 	return updatedMovie, nil
 }
 
-func (s *MovieService) DeleteMovie(movieId string) error {
-	err := s.MovieRepository.DeleteMovie(movieId)
+func (s *MovieService) Delete(movieId string) error {
+	err := s.MovieRepository.Delete(movieId)
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
 			return nil

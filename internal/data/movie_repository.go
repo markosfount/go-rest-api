@@ -2,6 +2,7 @@ package data
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"rest_api/internal/api/model"
 
@@ -13,7 +14,7 @@ type MovieRepository struct {
 }
 
 // TODO handle not found in all
-func (r *MovieRepository) GetMovies() ([]model.Movie, error) {
+func (r *MovieRepository) GetAll() ([]*model.Movie, error) {
 	fmt.Println("Getting movies...")
 
 	rows, err := r.DB.Query("SELECT * FROM movies")
@@ -23,7 +24,7 @@ func (r *MovieRepository) GetMovies() ([]model.Movie, error) {
 	}
 	defer rows.Close()
 
-	var movies []model.Movie
+	var movies []*model.Movie
 
 	for rows.Next() {
 		var id int
@@ -35,7 +36,7 @@ func (r *MovieRepository) GetMovies() ([]model.Movie, error) {
 			return nil, err
 		}
 
-		movies = append(movies, model.Movie{MovieId: movieID, MovieName: movieName})
+		movies = append(movies, &model.Movie{MovieId: movieID, MovieName: movieName})
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
@@ -44,7 +45,7 @@ func (r *MovieRepository) GetMovies() ([]model.Movie, error) {
 	return movies, nil
 }
 
-func (r *MovieRepository) GetMovie(movieId string) (*model.Movie, error) {
+func (r *MovieRepository) Get(movieId string) (*model.Movie, error) {
 	fmt.Printf("Getting movie with movieId %s\n", movieId)
 
 	movie := model.Movie{}
@@ -52,7 +53,7 @@ func (r *MovieRepository) GetMovie(movieId string) (*model.Movie, error) {
 		Scan(&movie.MovieId, &movie.MovieName)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrRecordNotFound
 		}
 		return nil, err
@@ -61,7 +62,7 @@ func (r *MovieRepository) GetMovie(movieId string) (*model.Movie, error) {
 	return &movie, nil
 }
 
-func (r *MovieRepository) CreateMovie(movie *model.Movie) (*model.Movie, error) {
+func (r *MovieRepository) Create(movie *model.Movie) (*model.Movie, error) {
 	fmt.Println("Inserting new movie with ID: " + movie.MovieId + " and name: " + movie.MovieName)
 
 	var lastInsertID int
@@ -80,7 +81,7 @@ func (r *MovieRepository) CreateMovie(movie *model.Movie) (*model.Movie, error) 
 	return movie, nil
 }
 
-func (r *MovieRepository) UpdateMovie(movie *model.Movie) (*model.Movie, error) {
+func (r *MovieRepository) Update(movie *model.Movie) (*model.Movie, error) {
 	fmt.Println("Updating movie with ID: " + movie.MovieId)
 
 	res, err := r.DB.Exec(
@@ -99,7 +100,7 @@ func (r *MovieRepository) UpdateMovie(movie *model.Movie) (*model.Movie, error) 
 	return movie, nil
 }
 
-func (r *MovieRepository) DeleteMovie(movieId string) error {
+func (r *MovieRepository) Delete(movieId string) error {
 	fmt.Printf("Deleting movie with movieId %s\n", movieId)
 
 	res, err := r.DB.Exec("DELETE FROM movies WHERE movieID = $1;", movieId)

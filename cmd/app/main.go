@@ -25,7 +25,7 @@ func main() {
 	userRepository := data.UserRepository{DB: db}
 	movieRepository := data.MovieRepository{DB: db}
 
-	movieService := service.MovieService{MovieRepository: movieRepository}
+	movieService := service.MovieService{MovieRepository: &movieRepository}
 
 	h := &handler.Handler{
 		UserRepository: userRepository,
