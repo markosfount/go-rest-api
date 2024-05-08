@@ -17,7 +17,7 @@ type MovieRepository struct {
 func (r *MovieRepository) GetAll() ([]*model.Movie, error) {
 	fmt.Println("Getting movies...")
 
-	rows, err := r.DB.Query("SELECT * FROM movies")
+	rows, err := r.DB.Query("SELECT movieId, movieName, overview FROM movies")
 
 	if err != nil {
 		return nil, err
@@ -27,16 +27,22 @@ func (r *MovieRepository) GetAll() ([]*model.Movie, error) {
 	var movies []*model.Movie
 
 	for rows.Next() {
-		var id int
 		var movieID string
 		var movieName string
+		var overview sql.NullString
 
-		err := rows.Scan(&id, &movieID, &movieName)
+		err := rows.Scan(&movieID, &movieName, &overview)
 		if err != nil {
 			return nil, err
 		}
-
-		movies = append(movies, &model.Movie{MovieId: movieID, MovieName: movieName})
+		movie := &model.Movie{
+			MovieId:   movieID,
+			MovieName: movieName,
+		}
+		if overview.Valid {
+			movie.Overview = overview.String
+		}
+		movies = append(movies, movie)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
@@ -48,15 +54,19 @@ func (r *MovieRepository) GetAll() ([]*model.Movie, error) {
 func (r *MovieRepository) Get(movieId string) (*model.Movie, error) {
 	fmt.Printf("Getting movie with movieId %s\n", movieId)
 
+	var overview sql.NullString
 	movie := model.Movie{}
-	err := r.DB.QueryRow("SELECT movieId, movieName FROM movies WHERE movieID = $1;", movieId).
-		Scan(&movie.MovieId, &movie.MovieName)
+	err := r.DB.QueryRow("SELECT movieId, movieName, overview FROM movies WHERE movieID = $1;", movieId).
+		Scan(&movie.MovieId, &movie.MovieName, &overview)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrRecordNotFound
 		}
 		return nil, err
+	}
+	if overview.Valid {
+		movie.Overview = overview.String
 	}
 
 	return &movie, nil
@@ -67,7 +77,7 @@ func (r *MovieRepository) Create(movie *model.Movie) (*model.Movie, error) {
 
 	var lastInsertID int
 	err := r.DB.QueryRow(
-		"INSERT INTO movies(movieID, movieName) VALUES($1, $2) returning id;", movie.MovieId, movie.MovieName).Scan(&lastInsertID)
+		"INSERT INTO movies(movieID, movieName, overview) VALUES($1, $2, $3) returning id;", movie.MovieId, movie.MovieName, movie.Overview).Scan(&lastInsertID)
 	if err != nil {
 		pqErr := err.(*pq.Error)
 		switch pqErr.Code {
@@ -85,7 +95,7 @@ func (r *MovieRepository) Update(movie *model.Movie) (*model.Movie, error) {
 	fmt.Println("Updating movie with ID: " + movie.MovieId)
 
 	res, err := r.DB.Exec(
-		"UPDATE movies SET movieId = $1, movieName = $2 WHERE movieId = $1;", movie.MovieId, movie.MovieName)
+		"UPDATE movies SET movieId = $1, movieName = $2, overview = $3 WHERE movieId = $1;", movie.MovieId, movie.MovieName, movie.Overview)
 
 	if err != nil {
 		return nil, err

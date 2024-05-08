@@ -272,6 +272,100 @@ func (s *AppSuite) TestCreateMovie() {
 	clearDatabase()
 }
 
+func (s *AppSuite) TestCreateMovieWithTitle() {
+	// Create movie
+	movieId := "1"
+	movieToCreate := model.Movie{MovieId: movieId, MovieName: "name1"}
+	body, err := json.Marshal(movieToCreate)
+
+	response, err := http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusCreated, response.StatusCode, "Expected status to be: Created")
+
+	responseData, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", err)
+	}
+	defer response.Body.Close()
+	movie := model.Movie{}
+	expectedMovie := model.Movie{MovieId: "1", MovieName: "name1"}
+	err = json.Unmarshal(responseData, &movie)
+	if err != nil {
+		log.Fatalf("Got error when parsing response. error: %s", err)
+	}
+	s.Equal(expectedMovie, movie, "Should return created movie")
+	// check that movie was created in db
+	savedMovie := getMovieFromDatabase(movieId)
+	s.Equal(expectedMovie, savedMovie, "Should return created movie")
+
+	// Create movie with malformed request
+	body = []byte("{asf}")
+
+	response, err = http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusBadRequest, response.StatusCode, "Expected status to be: Bad Request")
+
+	responseData, err = io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", err)
+	}
+	defer response.Body.Close()
+	responseMessage := model.ResponseMessage{}
+	expectedMessage := model.ResponseMessage{Message: "Could not parse request body"}
+	err = json.Unmarshal(responseData, &responseMessage)
+	if err != nil {
+		log.Fatalf("Got error when parsing response. error: %s", err)
+	}
+	s.Equal(expectedMessage, responseMessage, "Should return message for: Bad Request")
+	clearDatabase()
+
+	// Create movie with missing id in body
+	movieToCreate = model.Movie{MovieName: "name1"}
+	body, err = json.Marshal(movieToCreate)
+
+	response, err = http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusBadRequest, response.StatusCode, "Expected status to be: Bad Request")
+
+	responseData, err = io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", err)
+	}
+	defer response.Body.Close()
+	responseMessage = model.ResponseMessage{}
+	expectedMessage = model.ResponseMessage{Message: "You are missing movieID or movieName parameter"}
+	err = json.Unmarshal(responseData, &responseMessage)
+	if err != nil {
+		log.Fatalf("Got error when parsing response. error: %s", err)
+	}
+	s.Equal(expectedMessage, responseMessage, "Should return message for: Bad Request")
+	clearDatabase()
+
+	// Try to create already existing movie
+	createMovieInDatabase(model.Movie{MovieId: "1", MovieName: "name1"})
+	movieToCreate = model.Movie{MovieId: movieId, MovieName: "name2"}
+	body, err = json.Marshal(movieToCreate)
+
+	response, err = http.Post(apiHost+"/movies", "application/json", bytes.NewBuffer(body))
+	s.NoErrorf(err, "Should get no error from request initially")
+	s.EqualValuesf(http.StatusConflict, response.StatusCode, "Expected status to be: Conflict")
+
+	responseData, err = io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalf("got error when trying to read API response. Error: %s", err)
+	}
+	defer response.Body.Close()
+	responseMessage = model.ResponseMessage{}
+	expectedMessage = model.ResponseMessage{Message: "A movie with the provided id already exists"}
+	err = json.Unmarshal(responseData, &responseMessage)
+	if err != nil {
+		log.Fatalf("Got error when parsing response. error: %s", err)
+	}
+	s.Equal(expectedMessage, responseMessage, "Should return message for: Conflict")
+
+	clearDatabase()
+}
+
 func (s *AppSuite) TestUpdateMovie() {
 	// Update movie when does not exist
 	movieId := "1"

@@ -3,6 +3,7 @@ package model
 type Movie struct {
 	MovieId   string `json:"id"`
 	MovieName string `json:"title"`
+	Overview  string `json:"overview"`
 }
 
 type User struct {

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"rest_api/internal/api/model"
 	"rest_api/internal/api/service"
+	"rest_api/internal/api/tmdb"
 	"rest_api/internal/api/utils"
 	"rest_api/internal/data"
 
@@ -18,8 +19,9 @@ import (
 )
 
 type Handler struct {
-	UserRepository data.UserRepository
-	MovieService   service.MovieService
+	UserRepository *data.UserRepository
+	MovieService   *service.MovieService
+	TmdbService    *tmdb.Service
 }
 
 func (h *Handler) PingHandler(res http.ResponseWriter, _ *http.Request) {
@@ -113,11 +115,27 @@ func (h *Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if movie.MovieId == "" || movie.MovieName == "" {
-		returnErrorResponse("Missing movieID or movieName parameter", http.StatusBadRequest, res)
+	if movie.MovieId == "" && movie.MovieName == "" {
+		returnErrorResponse("movieID or movieName parameter should be present", http.StatusBadRequest, res)
 		return
 	}
-	createdMovie, err := h.MovieService.Create(movie)
+
+	var movieInfo *tmdb.Movie
+	if movie.MovieName != "" {
+		response, err := h.TmdbService.GetMovieInfo(movie.MovieName)
+		if err != nil {
+			returnErrorResponse("Could not create movie. Could not retrieve movie details", http.StatusInternalServerError, res)
+		}
+		movieInfo = response
+	}
+
+	movieToPersist := &model.Movie{
+		MovieId:   movie.MovieId,
+		MovieName: movie.MovieName,
+		Overview:  movieInfo.Overview,
+	}
+	// handle by id as well
+	createdMovie, err := h.MovieService.Create(movieToPersist)
 
 	if err != nil {
 		var cErr *model.ConflictError

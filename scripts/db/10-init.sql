@@ -4,6 +4,7 @@ CREATE TABLE movies (
                         id SERIAL,
                         movieID varchar(50) NOT NULL UNIQUE,
                         movieName varchar(50) NOT NULL,
+                        overview text,
                         PRIMARY KEY (id)
 );
 GRANT ALL ON movies TO "user";

@@ -10,6 +10,7 @@ import (
 	"rest_api/internal/api/application"
 	"rest_api/internal/api/handler"
 	"rest_api/internal/api/service"
+	"rest_api/internal/api/tmdb"
 	"rest_api/internal/data"
 	"syscall"
 	"time"
@@ -18,16 +19,18 @@ import (
 func main() {
 	db := application.CreateDB()
 
-	userRepository := data.UserRepository{DB: db}
-	movieRepository := data.MovieRepository{DB: db}
+	userRepository := &data.UserRepository{DB: db}
+	movieRepository := &data.MovieRepository{DB: db}
 
-	movieService := service.MovieService{MovieRepository: &movieRepository}
+	movieService := &service.MovieService{MovieRepository: movieRepository}
+	tmdbService := &tmdb.Service{Client: http.DefaultClient}
 
 	r := mux.NewRouter()
 
 	h := &handler.Handler{
 		UserRepository: userRepository,
 		MovieService:   movieService,
+		TmdbService:    tmdbService,
 	}
 
 	r.HandleFunc("/ping", h.PingHandler).Methods(http.MethodGet)
@@ -46,7 +49,7 @@ func main() {
 	done := make(chan bool)
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	terminationDelay := 5 * time.Second
+	terminationDelay := 1 * time.Second
 
 	go func() {
 		sig := <-quit
