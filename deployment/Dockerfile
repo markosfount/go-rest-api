@@ -7,7 +7,7 @@ WORKDIR /app
 
 COPY ./ /app
 
-RUN pwd && ls -lah && go build -o /output ./cmd/app
+RUN go build -o /output ./cmd/app
 
 EXPOSE 3000
 

@@ -7,6 +7,14 @@ import (
 	"os"
 )
 
+func CreateDB() *sql.DB {
+	dbHost := GetEnv("DB_HOST", "localhost")
+	dbUser := GetEnv("DB_USER", "user")
+	dbPassword := GetEnv("DB_PASS", "password")
+	dbName := GetEnv("DB_NAME", "movies")
+	// Initialise the connection pool.
+	return SetupDB(dbHost, dbUser, dbPassword, dbName)
+}
 
 func SetupDB(dbHost, dbUser, dbPassword, dbName string) *sql.DB {
 	dbInfo := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbUser, dbPassword, dbName)
