@@ -13,6 +13,7 @@ import (
 	"rest_api/internal/api/tmdb"
 	"rest_api/internal/api/utils"
 	"rest_api/internal/data"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -78,7 +79,12 @@ func (h *Handler) GetMovies(res http.ResponseWriter, _ *http.Request) {
 
 func (h *Handler) GetMovie(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	movieId := vars["movieId"]
+	idParam := vars["movieId"]
+
+	movieId := validateIDParam(idParam, res)
+	if movieId == 0 {
+		return
+	}
 
 	movie, err := h.MovieService.MovieRepository.Get(movieId)
 	if err != nil {
@@ -115,16 +121,24 @@ func (h *Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if movie.MovieId == "" && movie.MovieName == "" {
+	if movie.MovieId == 0 && movie.MovieName == "" {
 		returnErrorResponse("movieID or movieName parameter should be present", http.StatusBadRequest, res)
 		return
 	}
 
 	var movieInfo *tmdb.Movie
 	if movie.MovieName != "" {
-		response, err := h.TmdbService.GetMovieInfo(movie.MovieName)
+		response, err := h.TmdbService.GetMovieByTitle(movie.MovieName)
 		if err != nil {
-			returnErrorResponse("Could not create movie. Could not retrieve movie details", http.StatusInternalServerError, res)
+			returnErrorResponse("Could not create movie. A movie with the provided name does not exist", http.StatusBadRequest, res)
+			return
+		}
+		movieInfo = response
+	} else if movie.MovieId != 0 {
+		response, err := h.TmdbService.GetMovieByID(movie.MovieId)
+		if err != nil {
+			returnErrorResponse("Could not create movie. A movie with the provided name does not exist", http.StatusBadRequest, res)
+			return
 		}
 		movieInfo = response
 	}
@@ -159,8 +173,12 @@ func (h *Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 
 func (h *Handler) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	movieId := vars["movieId"]
+	idParam := vars["movieId"]
 
+	movieId := validateIDParam(idParam, res)
+	if movieId == 0 {
+		return
+	}
 	var movie *model.Movie
 
 	payload := req.Body
@@ -203,9 +221,15 @@ func (h *Handler) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 
 func (h *Handler) DeleteMovie(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	movieId := vars["movieId"]
+	idParam := vars["movieId"]
+	movieId, err := strconv.Atoi(idParam)
+	if err != nil {
+		slog.Error("Error when converting id to int: %s\n", err)
+		returnErrorResponse("ID should be a number", http.StatusBadRequest, res)
+		return
+	}
 
-	err := h.MovieService.Delete(movieId)
+	err = h.MovieService.Delete(movieId)
 	if err != nil {
 		returnErrorResponse("Error when deleting requested movie", http.StatusInternalServerError, res)
 		return
@@ -223,4 +247,14 @@ func createResponse(success bool, message string) []byte {
 	response := model.ResponseMessage{Success: success, Message: message}
 	responseBytes, _ := json.Marshal(response)
 	return responseBytes
+}
+
+func validateIDParam(id string, res http.ResponseWriter) int {
+	movieId, err := strconv.Atoi(id)
+	if err != nil {
+		slog.Error("Error when converting id to int: %s\n", err)
+		returnErrorResponse("ID should be a number", http.StatusBadRequest, res)
+		return 0
+	}
+	return movieId
 }

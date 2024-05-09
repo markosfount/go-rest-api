@@ -27,7 +27,7 @@ func (r *MovieRepository) GetAll() ([]*model.Movie, error) {
 	var movies []*model.Movie
 
 	for rows.Next() {
-		var movieID string
+		var movieID int
 		var movieName string
 		var overview sql.NullString
 
@@ -51,8 +51,8 @@ func (r *MovieRepository) GetAll() ([]*model.Movie, error) {
 	return movies, nil
 }
 
-func (r *MovieRepository) Get(movieId string) (*model.Movie, error) {
-	fmt.Printf("Getting movie with movieId %s\n", movieId)
+func (r *MovieRepository) Get(movieId int) (*model.Movie, error) {
+	fmt.Printf("Getting movie with movieId %d\n", movieId)
 
 	var overview sql.NullString
 	movie := model.Movie{}
@@ -73,7 +73,7 @@ func (r *MovieRepository) Get(movieId string) (*model.Movie, error) {
 }
 
 func (r *MovieRepository) Create(movie *model.Movie) (*model.Movie, error) {
-	fmt.Println("Inserting new movie with ID: " + movie.MovieId + " and name: " + movie.MovieName)
+	fmt.Printf("Inserting new movie with ID: %d  and name: %s\n", movie.MovieId, movie.MovieName)
 
 	var lastInsertID int
 	err := r.DB.QueryRow(
@@ -92,7 +92,7 @@ func (r *MovieRepository) Create(movie *model.Movie) (*model.Movie, error) {
 }
 
 func (r *MovieRepository) Update(movie *model.Movie) (*model.Movie, error) {
-	fmt.Println("Updating movie with ID: " + movie.MovieId)
+	fmt.Printf("Updating movie with ID: %d\n", movie.MovieId)
 
 	res, err := r.DB.Exec(
 		"UPDATE movies SET movieId = $1, movieName = $2, overview = $3 WHERE movieId = $1;", movie.MovieId, movie.MovieName, movie.Overview)
@@ -110,7 +110,7 @@ func (r *MovieRepository) Update(movie *model.Movie) (*model.Movie, error) {
 	return movie, nil
 }
 
-func (r *MovieRepository) Delete(movieId string) error {
+func (r *MovieRepository) Delete(movieId int) error {
 	fmt.Printf("Deleting movie with movieId %s\n", movieId)
 
 	res, err := r.DB.Exec("DELETE FROM movies WHERE movieID = $1;", movieId)

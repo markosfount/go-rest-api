@@ -18,7 +18,7 @@ func (r *MockRepository) GetAll() ([]*model.Movie, error) {
 	return args.Get(0).([]*model.Movie), args.Error(1)
 }
 
-func (r *MockRepository) Get(movieId string) (*model.Movie, error) {
+func (r *MockRepository) Get(movieId int) (*model.Movie, error) {
 	args := r.Called(movieId)
 	arg1 := args.Get(0)
 	if arg1 != nil {
@@ -45,7 +45,7 @@ func (r *MockRepository) Update(movie *model.Movie) (*model.Movie, error) {
 	return nil, args.Error(1)
 }
 
-func (r *MockRepository) Delete(movieId string) error {
+func (r *MockRepository) Delete(movieId int) error {
 	args := r.Called(movieId)
 	return args.Error(0)
 }
@@ -64,10 +64,10 @@ func TestMovieService_GetAll(t *testing.T) {
 	}{
 		{
 			"success",
-			[]*model.Movie{{MovieId: "1"}},
+			[]*model.Movie{{MovieId: 1}},
 			nil,
 			func(r *MockRepository) *mock.Call {
-				return r.On("GetAll", mock.Anything).Return([]*model.Movie{{MovieId: "1"}}, nil)
+				return r.On("GetAll", mock.Anything).Return([]*model.Movie{{MovieId: 1}}, nil)
 			},
 		},
 		{
@@ -109,23 +109,23 @@ func TestMovieService_Get(t *testing.T) {
 	}
 	tests := []struct {
 		name     string
-		input    string
+		input    int
 		want     *model.Movie
 		wantErr  error
 		mockFunc func(r *MockRepository) *mock.Call
 	}{
 		{
 			"success",
-			"1",
-			&model.Movie{MovieId: "1"},
+			1,
+			&model.Movie{MovieId: 1},
 			nil,
 			func(r *MockRepository) *mock.Call {
-				return r.On("Get", mock.Anything).Return(&model.Movie{MovieId: "1"}, nil)
+				return r.On("Get", mock.Anything).Return(&model.Movie{MovieId: 1}, nil)
 			},
 		},
 		{
 			"not found",
-			"1",
+			1,
 			nil,
 			model.NotFoundError{},
 			func(r *MockRepository) *mock.Call {
@@ -134,7 +134,7 @@ func TestMovieService_Get(t *testing.T) {
 		},
 		{
 			"other error",
-			"1",
+			1,
 			nil,
 			randErr,
 			func(r *MockRepository) *mock.Call {
@@ -180,10 +180,10 @@ func TestMovieService_Create(t *testing.T) {
 		{
 			"success",
 			&model.Movie{},
-			&model.Movie{MovieId: "1"},
+			&model.Movie{MovieId: 1},
 			nil,
 			func(r *MockRepository) *mock.Call {
-				return r.On("Create", mock.Anything).Return(&model.Movie{MovieId: "1"}, nil)
+				return r.On("Create", mock.Anything).Return(&model.Movie{MovieId: 1}, nil)
 			},
 		},
 		{
@@ -243,10 +243,10 @@ func TestMovieService_Update(t *testing.T) {
 		{
 			"success",
 			&model.Movie{},
-			&model.Movie{MovieId: "1"},
+			&model.Movie{MovieId: 1},
 			nil,
 			func(r *MockRepository) *mock.Call {
-				return r.On("Update", mock.Anything).Return(&model.Movie{MovieId: "1"}, nil)
+				return r.On("Update", mock.Anything).Return(&model.Movie{MovieId: 1}, nil)
 			},
 		},
 		{
@@ -298,13 +298,13 @@ func TestMovieService_Delete(t *testing.T) {
 	}
 	tests := []struct {
 		name     string
-		input    string
+		input    int
 		wantErr  error
 		mockFunc func(r *MockRepository) *mock.Call
 	}{
 		{
 			"success",
-			"1",
+			1,
 			nil,
 			func(r *MockRepository) *mock.Call {
 				return r.On("Delete", mock.Anything).Return(nil)
@@ -312,7 +312,7 @@ func TestMovieService_Delete(t *testing.T) {
 		},
 		{
 			"not found",
-			"1",
+			1,
 			nil,
 			func(r *MockRepository) *mock.Call {
 				return r.On("Delete", mock.Anything).Return(data.ErrRecordNotFound)
@@ -320,7 +320,7 @@ func TestMovieService_Delete(t *testing.T) {
 		},
 		{
 			"other error",
-			"1",
+			1,
 			randErr,
 			func(r *MockRepository) *mock.Call {
 				return r.On("Delete", mock.Anything).Return(randErr)

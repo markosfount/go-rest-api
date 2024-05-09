@@ -20,7 +20,7 @@ func (s *MovieService) GetAll() ([]*model.Movie, error) {
 	return movies, nil
 }
 
-func (s *MovieService) Get(movieId string) (*model.Movie, error) {
+func (s *MovieService) Get(movieId int) (*model.Movie, error) {
 	movie, err := s.MovieRepository.Get(movieId)
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
@@ -58,7 +58,7 @@ func (s *MovieService) Update(movie *model.Movie) (*model.Movie, error) {
 	return updatedMovie, nil
 }
 
-func (s *MovieService) Delete(movieId string) error {
+func (s *MovieService) Delete(movieId int) error {
 	err := s.MovieRepository.Delete(movieId)
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {

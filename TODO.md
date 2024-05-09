@@ -1,4 +1,6 @@
 # to add
 
- - handle empty results from omdb
- - fix test
+ - fix test with http mock
+ - background process with goroutine
+ - validation for id int (in pgoress, done?)
+ - fix formatting of id
