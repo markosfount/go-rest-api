@@ -84,7 +84,7 @@ func main() {
 	// run scheduler in background
 	wg.Add(1)
 	go func() {
-		scheduler.Run(5, quit, &wg)
+		scheduler.Run(5, done, &wg)
 	}()
 
 	listenAddr := ":3000"
@@ -94,9 +94,6 @@ func main() {
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Could not listen on %s: %v\n", listenAddr, err)
 	}
-	log.Printf("before receiving done signal\n")
-	<-done
-	log.Printf("received done signal\n")
 	wg.Wait()
 
 	log.Println("Server stopped")
