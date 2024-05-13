@@ -10,10 +10,12 @@ import (
 )
 
 const (
-	tmdbApiUrl  = "https://api.themoviedb.org/3/search/movie"
-	apiKeyParam = "?api_key=%s"
-	titleQuery  = "&query=%s"
-	idQuery     = "/%d"
+	apiUrl          = "https://api.themoviedb.org/3/"
+	searchEndpoint  = "search/movie"
+	detailsEndpoint = "/movie"
+	apiKeyParam     = "?api_key=%s"
+	titleQuery      = "&query=%s"
+	idQuery         = "/%d"
 )
 
 type Service struct {
@@ -21,8 +23,7 @@ type Service struct {
 }
 
 func (s *Service) GetMovieByTitle(title string) (*Movie, error) {
-	url := strings.Join([]string{tmdbApiUrl, fmt.Sprintf(apiKeyParam, config.API_KEY), fmt.Sprintf(titleQuery, title)}, "")
-	response, err := s.Client.Get(url)
+	response, err := s.Client.Get(createSearchUrl(title))
 	if err != nil {
 		return nil, err
 	}
@@ -35,14 +36,9 @@ func (s *Service) GetMovieByTitle(title string) (*Movie, error) {
 	if moviesResponse.TotalResults == 0 {
 		return nil, ErrNoMoviesFound
 	}
-	movieId := &moviesResponse.Results[0].ID
-	ex := fmt.Sprintf(idQuery, movieId)
-	fmt.Println(ex)
-	ex2 := fmt.Sprintf("%d", movieId)
-	fmt.Println(ex2)
-	byIDUrl := strings.Join([]string{tmdbApiUrl, fmt.Sprintf(idQuery, movieId), fmt.Sprintf(apiKeyParam, config.API_KEY)}, "")
+	movieId := moviesResponse.Results[0].ID
 
-	response, err = s.Client.Get(byIDUrl)
+	response, err = s.Client.Get(createDetailsUrl(movieId))
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +53,7 @@ func (s *Service) GetMovieByTitle(title string) (*Movie, error) {
 }
 
 func (s *Service) GetMovieByID(id int) (*Movie, error) {
-	url := strings.Join([]string{tmdbApiUrl, fmt.Sprintf(idQuery, id), fmt.Sprintf(apiKeyParam, config.API_KEY)}, "")
-	response, err := s.Client.Get(url)
+	response, err := s.Client.Get(createDetailsUrl(id))
 	if err != nil {
 		return nil, err
 	}
@@ -69,4 +64,12 @@ func (s *Service) GetMovieByID(id int) (*Movie, error) {
 		return nil, err
 	}
 	return movie, nil
+}
+
+func createSearchUrl(title string) string {
+	return strings.Join([]string{apiUrl, searchEndpoint, fmt.Sprintf(apiKeyParam, config.API_KEY), fmt.Sprintf(titleQuery, title)}, "")
+}
+
+func createDetailsUrl(id int) string {
+	return strings.Join([]string{apiUrl, detailsEndpoint, fmt.Sprintf(idQuery, id), fmt.Sprintf(apiKeyParam, config.API_KEY)}, "")
 }

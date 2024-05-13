@@ -12,6 +12,8 @@ import (
 	"rest_api/internal/api/service"
 	"rest_api/internal/api/tmdb"
 	"rest_api/internal/data"
+	"rest_api/internal/scheduler"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -47,9 +49,13 @@ func main() {
 	}
 
 	done := make(chan bool)
+	defer close(done)
 	quit := make(chan os.Signal, 1)
+
+	wg := sync.WaitGroup{}
+
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	terminationDelay := 1 * time.Second
+	terminationDelay := 5 * time.Second
 
 	go func() {
 		sig := <-quit
@@ -60,16 +66,25 @@ func main() {
 		defer delay.Stop()
 		select {
 		case <-quit:
+			// FIXME
 			log.Println("Second signal caught. Shutting down NOW")
 		case <-delay.C:
 		}
-
+		log.Printf("shutting down server")
+		// termination delay in both context and signal listening?
 		ctx, cancel := context.WithTimeout(context.Background(), terminationDelay)
 		defer cancel()
 		if err := server.Shutdown(ctx); err != nil {
 			log.Fatalf("could not shutdown server: %v", err)
 		}
-		close(done)
+		done <- true
+		close(quit)
+	}()
+
+	// run scheduler in background
+	wg.Add(1)
+	go func() {
+		scheduler.Run(5, quit, &wg)
 	}()
 
 	listenAddr := ":3000"
@@ -79,8 +94,11 @@ func main() {
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Could not listen on %s: %v\n", listenAddr, err)
 	}
-
+	log.Printf("before receiving done signal\n")
 	<-done
+	log.Printf("received done signal\n")
+	wg.Wait()
+
 	log.Println("Server stopped")
 
 }

@@ -142,7 +142,7 @@ func (h *Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 		}
 		movieInfo = response
 	}
-
+	// todo check models etc
 	movieToPersist := &model.Movie{
 		MovieId:   movie.MovieId,
 		MovieName: movie.MovieName,
@@ -152,7 +152,7 @@ func (h *Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 	createdMovie, err := h.MovieService.Create(movieToPersist)
 
 	if err != nil {
-		var cErr *model.ConflictError
+		var cErr model.ConflictError
 		if errors.As(err, &cErr) {
 			returnErrorResponse("A movie with the provided id already exists", http.StatusConflict, res)
 			return
