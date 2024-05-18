@@ -19,11 +19,15 @@ const (
 )
 
 type Service struct {
-	Client *http.Client
+	client *http.Client
+}
+
+func NewService() Service {
+	return Service{client: http.DefaultClient}
 }
 
 func (s *Service) GetMovieByTitle(title string) (*Movie, error) {
-	response, err := s.Client.Get(createSearchUrl(title))
+	response, err := s.client.Get(createSearchUrl(title))
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +42,7 @@ func (s *Service) GetMovieByTitle(title string) (*Movie, error) {
 	}
 	movieId := moviesResponse.Results[0].ID
 
-	response, err = s.Client.Get(createDetailsUrl(movieId))
+	response, err = s.client.Get(createDetailsUrl(movieId))
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +57,7 @@ func (s *Service) GetMovieByTitle(title string) (*Movie, error) {
 }
 
 func (s *Service) GetMovieByID(id int) (*Movie, error) {
-	response, err := s.Client.Get(createDetailsUrl(id))
+	response, err := s.client.Get(createDetailsUrl(id))
 	if err != nil {
 		return nil, err
 	}

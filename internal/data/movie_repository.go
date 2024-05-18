@@ -105,7 +105,7 @@ func (r *MovieRepository) Update(movie *model.Movie) (*model.Movie, error) {
 		return nil, err
 	}
 	if count == 0 {
-		return nil, &model.NotFoundError{}
+		return nil, ErrRecordNotFound
 	}
 	return movie, nil
 }
@@ -123,7 +123,7 @@ func (r *MovieRepository) Delete(movieId int) error {
 		return err
 	}
 	if count == 0 {
-		return &model.NotFoundError{}
+		return ErrRecordNotFound
 	}
 	return nil
 }

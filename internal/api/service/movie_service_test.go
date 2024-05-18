@@ -54,7 +54,7 @@ func TestMovieService_GetAll(t *testing.T) {
 	randErr := errors.New("random")
 	mockRepository := MockRepository{}
 	s := &MovieService{
-		MovieRepository: &mockRepository,
+		movieRepository: &mockRepository,
 	}
 	tests := []struct {
 		name     string
@@ -105,7 +105,7 @@ func TestMovieService_Get(t *testing.T) {
 	randErr := errors.New("random")
 	mockRepository := MockRepository{}
 	s := &MovieService{
-		MovieRepository: &mockRepository,
+		movieRepository: &mockRepository,
 	}
 	tests := []struct {
 		name     string
@@ -168,7 +168,7 @@ func TestMovieService_Create(t *testing.T) {
 	randErr := errors.New("random")
 	mockRepository := MockRepository{}
 	s := &MovieService{
-		MovieRepository: &mockRepository,
+		movieRepository: &mockRepository,
 	}
 	tests := []struct {
 		name     string
@@ -231,7 +231,7 @@ func TestMovieService_Update(t *testing.T) {
 	randErr := errors.New("random")
 	mockRepository := MockRepository{}
 	s := &MovieService{
-		MovieRepository: &mockRepository,
+		movieRepository: &mockRepository,
 	}
 	tests := []struct {
 		name     string
@@ -294,7 +294,7 @@ func TestMovieService_Delete(t *testing.T) {
 	randErr := errors.New("random")
 	mockRepository := MockRepository{}
 	s := &MovieService{
-		MovieRepository: &mockRepository,
+		movieRepository: &mockRepository,
 	}
 	tests := []struct {
 		name     string

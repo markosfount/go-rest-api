@@ -24,15 +24,15 @@ func main() {
 	userRepository := &data.UserRepository{DB: db}
 	movieRepository := &data.MovieRepository{DB: db}
 
-	movieService := &service.MovieService{MovieRepository: movieRepository}
-	tmdbService := &tmdb.Service{Client: http.DefaultClient}
+	movieService := service.NewMovieService(movieRepository)
+	tmdbService := tmdb.NewService()
 
 	r := mux.NewRouter()
 
 	h := &handler.Handler{
 		UserRepository: userRepository,
-		MovieService:   movieService,
-		TmdbService:    tmdbService,
+		MovieService:   &movieService,
+		TmdbService:    &tmdbService,
 	}
 
 	r.HandleFunc("/ping", h.PingHandler).Methods(http.MethodGet)

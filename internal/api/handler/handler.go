@@ -86,9 +86,9 @@ func (h *Handler) GetMovie(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	movie, err := h.MovieService.MovieRepository.Get(movieId)
+	movie, err := h.MovieService.Get(movieId)
 	if err != nil {
-		var nfErr *model.NotFoundError
+		var nfErr model.NotFoundError
 		if errors.As(err, &nfErr) {
 			returnErrorResponse("No movie with provided id exists", http.StatusNotFound, res)
 			return

@@ -8,11 +8,15 @@ import (
 )
 
 type MovieService struct {
-	MovieRepository data.Repository[*model.Movie]
+	movieRepository data.Repository[*model.Movie]
+}
+
+func NewMovieService(repository data.Repository[*model.Movie]) MovieService {
+	return MovieService{movieRepository: repository}
 }
 
 func (s *MovieService) GetAll() ([]*model.Movie, error) {
-	movies, err := s.MovieRepository.GetAll()
+	movies, err := s.movieRepository.GetAll()
 	if err != nil {
 		slog.Error("Error when getting movies from db: %s\n", err)
 		return []*model.Movie{}, err
@@ -21,7 +25,7 @@ func (s *MovieService) GetAll() ([]*model.Movie, error) {
 }
 
 func (s *MovieService) Get(movieId int) (*model.Movie, error) {
-	movie, err := s.MovieRepository.Get(movieId)
+	movie, err := s.movieRepository.Get(movieId)
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
 			return nil, model.NotFoundError{}
@@ -33,7 +37,7 @@ func (s *MovieService) Get(movieId int) (*model.Movie, error) {
 }
 
 func (s *MovieService) Create(movie *model.Movie) (*model.Movie, error) {
-	createdMovie, err := s.MovieRepository.Create(movie)
+	createdMovie, err := s.movieRepository.Create(movie)
 
 	if err != nil {
 		if errors.Is(err, data.ErrRecordExists) {
@@ -46,7 +50,7 @@ func (s *MovieService) Create(movie *model.Movie) (*model.Movie, error) {
 }
 
 func (s *MovieService) Update(movie *model.Movie) (*model.Movie, error) {
-	updatedMovie, err := s.MovieRepository.Update(movie)
+	updatedMovie, err := s.movieRepository.Update(movie)
 
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
@@ -59,7 +63,7 @@ func (s *MovieService) Update(movie *model.Movie) (*model.Movie, error) {
 }
 
 func (s *MovieService) Delete(movieId int) error {
-	err := s.MovieRepository.Delete(movieId)
+	err := s.movieRepository.Delete(movieId)
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
 			return nil
