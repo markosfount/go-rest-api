@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"rest_api/internal/api/application"
 	"rest_api/internal/api/handler"
+	"rest_api/internal/api/kafka"
 	"rest_api/internal/api/service"
 	"rest_api/internal/api/tmdb"
 	"rest_api/internal/data"
@@ -29,10 +30,15 @@ func main() {
 
 	r := mux.NewRouter()
 
+	// sync publisher
+	publisher := &kafka.SyncPublisher{}
+	publisher.Configure("movies")
+
 	h := &handler.Handler{
 		UserRepository: userRepository,
 		MovieService:   &movieService,
 		TmdbService:    &tmdbService,
+		Publisher:      publisher,
 	}
 
 	r.HandleFunc("/ping", h.PingHandler).Methods(http.MethodGet)
@@ -44,8 +50,10 @@ func main() {
 	r.HandleFunc("/movies/{movieId}", h.DeleteMovie).Methods(http.MethodDelete)
 
 	server := http.Server{
-		Addr:    ":3000",
-		Handler: r,
+		Addr:         ":3000",
+		Handler:      r,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
 	}
 
 	done := make(chan bool)
@@ -80,11 +88,11 @@ func main() {
 		done <- true
 		close(quit)
 	}()
-
+	sch := scheduler.NewScheduler(5, done, &wg)
 	// run scheduler in background
 	wg.Add(1)
 	go func() {
-		scheduler.Run(5, done, &wg)
+		sch.Run()
 	}()
 
 	listenAddr := ":3000"

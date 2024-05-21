@@ -1,6 +1,7 @@
 package tmdb
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -27,7 +28,11 @@ func NewService() Service {
 }
 
 func (s *Service) GetMovieByTitle(title string) (*Movie, error) {
-	response, err := s.client.Get(createSearchUrl(title))
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, createSearchUrl(title), nil)
+	if err != nil {
+		return nil, err
+	}
+	response, err := s.client.Do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -40,24 +45,30 @@ func (s *Service) GetMovieByTitle(title string) (*Movie, error) {
 	if moviesResponse.TotalResults == 0 {
 		return nil, ErrNoMoviesFound
 	}
-	movieId := moviesResponse.Results[0].ID
+	//movieId := moviesResponse.Results[0].ID
+	movie := moviesResponse.Results[0]
 
-	response, err = s.client.Get(createDetailsUrl(movieId))
-	if err != nil {
-		return nil, err
-	}
-	responseBytes, err = io.ReadAll(response.Body)
-	movie := &Movie{}
+	//response, err = s.client.Get(createDetailsUrl(movieId))
+	//if err != nil {
+	//	return nil, err
+	//}
+	//responseBytes, err = io.ReadAll(response.Body)
+	//movie := &Movie{}
 	err = json.Unmarshal(responseBytes, movie)
-	if err != nil {
-		return nil, err
-	}
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	return movie, nil
+	//return movie, nil
+	return &movie, nil
 }
 
 func (s *Service) GetMovieByID(id int) (*Movie, error) {
-	response, err := s.client.Get(createDetailsUrl(id))
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, createDetailsUrl(id), nil)
+	if err != nil {
+		return nil, err
+	}
+	response, err := s.client.Do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -71,9 +82,9 @@ func (s *Service) GetMovieByID(id int) (*Movie, error) {
 }
 
 func createSearchUrl(title string) string {
-	return strings.Join([]string{apiUrl, searchEndpoint, fmt.Sprintf(apiKeyParam, config.API_KEY), fmt.Sprintf(titleQuery, title)}, "")
+	return strings.Join([]string{apiUrl, searchEndpoint, fmt.Sprintf(apiKeyParam, config.ApiKey), fmt.Sprintf(titleQuery, title)}, "")
 }
 
 func createDetailsUrl(id int) string {
-	return strings.Join([]string{apiUrl, detailsEndpoint, fmt.Sprintf(idQuery, id), fmt.Sprintf(apiKeyParam, config.API_KEY)}, "")
+	return strings.Join([]string{apiUrl, detailsEndpoint, fmt.Sprintf(idQuery, id), fmt.Sprintf(apiKeyParam, config.ApiKey)}, "")
 }

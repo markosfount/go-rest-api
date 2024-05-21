@@ -6,17 +6,31 @@ import (
 	"time"
 )
 
-func Run(interval time.Duration, done <-chan bool, wg *sync.WaitGroup) {
-	ticker := time.NewTicker(time.Second * interval)
+type Scheduler struct {
+	interval time.Duration
+	done     <-chan bool
+	wg       *sync.WaitGroup
+}
+
+func NewScheduler(interval time.Duration, done <-chan bool, wg *sync.WaitGroup) *Scheduler {
+	return &Scheduler{
+		interval: interval,
+		done:     done,
+		wg:       wg,
+	}
+}
+
+func (s *Scheduler) Run() {
+	ticker := time.NewTicker(time.Second * s.interval)
 	for {
 		select {
 		case <-ticker.C:
 			fmt.Println("Running background process")
-		case <-done:
+		case <-s.done:
 			fmt.Println("Shutting down background process")
 			time.Sleep(10 * time.Second)
 			ticker.Stop()
-			wg.Done()
+			s.wg.Done()
 			return
 		}
 	}

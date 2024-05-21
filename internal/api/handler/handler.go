@@ -8,6 +8,7 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"rest_api/internal/api/kafka"
 	"rest_api/internal/api/model"
 	"rest_api/internal/api/service"
 	"rest_api/internal/api/tmdb"
@@ -23,6 +24,7 @@ type Handler struct {
 	UserRepository *data.UserRepository
 	MovieService   *service.MovieService
 	TmdbService    *tmdb.Service
+	Publisher      kafka.Publisher
 }
 
 func (h *Handler) PingHandler(res http.ResponseWriter, _ *http.Request) {
@@ -64,6 +66,8 @@ func (h *Handler) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (h *Handler) GetMovies(res http.ResponseWriter, _ *http.Request) {
+	slog.Info("Received GET movies request")
+
 	movies, err := h.MovieService.GetAll()
 	if err != nil {
 		returnErrorResponse("Error when retrieving data", http.StatusInternalServerError, res)
@@ -78,6 +82,7 @@ func (h *Handler) GetMovies(res http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *Handler) GetMovie(res http.ResponseWriter, req *http.Request) {
+	slog.Info("Received GET movie request")
 	vars := mux.Vars(req)
 	idParam := vars["movieId"]
 
@@ -109,6 +114,7 @@ func (h *Handler) GetMovie(res http.ResponseWriter, req *http.Request) {
 }
 
 func (h *Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
+	slog.Info("Received POST movie request")
 	var movie *model.Movie
 
 	payload := req.Body
@@ -121,20 +127,22 @@ func (h *Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if movie.MovieId == 0 && movie.MovieName == "" {
-		returnErrorResponse("movieID or movieName parameter should be present", http.StatusBadRequest, res)
+	//if movie.MovieId == 0 && movie.MovieName == "" {
+	if movie.MovieName == "" {
+		//returnErrorResponse("movieID or movieName parameter should be present", http.StatusBadRequest, res)
+		returnErrorResponse("movieName parameter should be present", http.StatusBadRequest, res)
 		return
 	}
 
 	var movieInfo *tmdb.Movie
-	if movie.MovieName != "" {
-		response, err := h.TmdbService.GetMovieByTitle(movie.MovieName)
-		if err != nil {
-			returnErrorResponse("Could not create movie. A movie with the provided name does not exist", http.StatusBadRequest, res)
-			return
-		}
-		movieInfo = response
-	} else if movie.MovieId != 0 {
+	//if movie.MovieName != "" {
+	response, err := h.TmdbService.GetMovieByTitle(movie.MovieName)
+	if err != nil {
+		returnErrorResponse("Could not create movie. A movie with the provided name does not exist", http.StatusBadRequest, res)
+		return
+	}
+	movieInfo = response
+	/*} else if movie.MovieId != 0 {
 		response, err := h.TmdbService.GetMovieByID(movie.MovieId)
 		if err != nil {
 			returnErrorResponse("Could not create movie. A movie with the provided name does not exist", http.StatusBadRequest, res)
@@ -142,6 +150,7 @@ func (h *Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 		}
 		movieInfo = response
 	}
+	*/
 	// todo check models etc
 	movieToPersist := &model.Movie{
 		MovieId:   movie.MovieId,
@@ -168,10 +177,18 @@ func (h *Handler) AddMovie(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	//publish event
+	err = h.Publisher.Publish(string(movieJSON))
+	if err != nil {
+		slog.Error("Error when publishing movie", "error", err)
+		returnErrorResponse("Error creating response", http.StatusInternalServerError, res)
+	}
+
 	utils.ReturnJsonResponse(res, http.StatusCreated, movieJSON)
 }
 
 func (h *Handler) UpdateMovie(res http.ResponseWriter, req *http.Request) {
+	slog.Info("Received PUT movie request")
 	vars := mux.Vars(req)
 	idParam := vars["movieId"]
 
@@ -220,6 +237,7 @@ func (h *Handler) UpdateMovie(res http.ResponseWriter, req *http.Request) {
 }
 
 func (h *Handler) DeleteMovie(res http.ResponseWriter, req *http.Request) {
+	slog.Info("Received DELETE movie request")
 	vars := mux.Vars(req)
 	idParam := vars["movieId"]
 	movieId, err := strconv.Atoi(idParam)
