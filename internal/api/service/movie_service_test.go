@@ -183,7 +183,7 @@ func TestMovieService_Create(t *testing.T) {
 			&model.Movie{MovieId: 1},
 			nil,
 			func(r *MockRepository) *mock.Call {
-				return r.On("Create", mock.Anything).Return(&model.Movie{MovieId: 1}, nil)
+				return r.On("Configure", mock.Anything).Return(&model.Movie{MovieId: 1}, nil)
 			},
 		},
 		{
@@ -192,7 +192,7 @@ func TestMovieService_Create(t *testing.T) {
 			nil,
 			model.ConflictError{},
 			func(r *MockRepository) *mock.Call {
-				return r.On("Create", mock.Anything).Return(nil, data.ErrRecordExists)
+				return r.On("Configure", mock.Anything).Return(nil, data.ErrRecordExists)
 			},
 		},
 		{
@@ -201,7 +201,7 @@ func TestMovieService_Create(t *testing.T) {
 			nil,
 			randErr,
 			func(r *MockRepository) *mock.Call {
-				return r.On("Create", mock.Anything).Return(nil, randErr)
+				return r.On("Configure", mock.Anything).Return(nil, randErr)
 			},
 		},
 	}
@@ -212,16 +212,16 @@ func TestMovieService_Create(t *testing.T) {
 			got, err := s.Create(tt.input)
 			if tt.wantErr != nil {
 				if !errors.Is(err, tt.wantErr) {
-					t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("Configure() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
 			} else {
 				if err != nil {
-					t.Errorf("Create() error = %v, wantErr is nil", err)
+					t.Errorf("Configure() error = %v, wantErr is nil", err)
 				}
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Create() got = %v, want %v", got, tt.want)
+				t.Errorf("Configure() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

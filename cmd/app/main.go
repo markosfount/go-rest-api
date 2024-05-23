@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"errors"
+	"github.com/IBM/sarama"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"rest_api/internal/api/application"
+	"rest_api/internal/api/config"
 	"rest_api/internal/api/handler"
 	"rest_api/internal/api/kafka"
 	"rest_api/internal/api/service"
@@ -30,9 +33,27 @@ func main() {
 
 	r := mux.NewRouter()
 
-	// sync publisher
-	publisher := &kafka.SyncPublisher{}
-	publisher.Configure("movies")
+	admin, err := sarama.NewClusterAdmin([]string{config.BrokerLink}, sarama.NewConfig())
+	if err != nil {
+		log.Fatalf("Could not create kafka admin: %v", err)
+	}
+	err = admin.CreateTopic(config.Topic, &sarama.TopicDetail{
+		NumPartitions:     1,
+		ReplicationFactor: 1,
+	}, false)
+	var tErr *sarama.TopicError
+	if err != nil {
+		if !errors.As(err, &tErr) || !errors.Is(tErr.Unwrap(), sarama.ErrTopicAlreadyExists) {
+			log.Fatalf("Could not create topic: %v", err)
+		}
+	}
+	var publisher kafka.Publisher
+	if config.SyncPublish {
+		publisher = &kafka.SyncPublisher{}
+	} else {
+		publisher = &kafka.AsyncPublisher{}
+	}
+	publisher.Configure(config.Topic)
 
 	h := &handler.Handler{
 		UserRepository: userRepository,
@@ -97,7 +118,6 @@ func main() {
 
 	listenAddr := ":3000"
 	log.Printf("Started server on %s", listenAddr)
-	var err error
 	err = server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Could not listen on %s: %v\n", listenAddr, err)

@@ -3,7 +3,7 @@ package kafka
 import (
 	"github.com/IBM/sarama"
 	"log"
-	"rest_api/internal/api/model"
+	"rest_api/internal/api/config"
 	"time"
 )
 
@@ -11,14 +11,14 @@ type AsyncPublisher struct {
 	producer sarama.AsyncProducer
 }
 
-func (p *AsyncPublisher) Create() *AsyncPublisher {
-	config := sarama.NewConfig()
-	config.Version = sarama.DefaultVersion
-	config.Producer.RequiredAcks = sarama.WaitForLocal       // Only wait for the leader to ack
-	config.Producer.Compression = sarama.CompressionSnappy   // Compress messages
-	config.Producer.Flush.Frequency = 500 * time.Millisecond // Flush batches every 500ms
+func (p *AsyncPublisher) Configure(topic string) {
+	cfg := sarama.NewConfig()
+	cfg.Version = sarama.DefaultVersion
+	cfg.Producer.RequiredAcks = sarama.WaitForLocal       // Only wait for the leader to ack
+	cfg.Producer.Compression = sarama.CompressionSnappy   // Compress messages
+	cfg.Producer.Flush.Frequency = 500 * time.Millisecond // Flush batches every 500ms
 
-	producer, err := sarama.NewAsyncProducer([]string{brokerList}, config)
+	producer, err := sarama.NewAsyncProducer([]string{config.BrokerLink}, cfg)
 	if err != nil {
 		log.Fatalln("Failed to start Sarama producer:", err)
 	}
@@ -32,10 +32,13 @@ func (p *AsyncPublisher) Create() *AsyncPublisher {
 	}()
 
 	p.producer = producer
-
-	return p
 }
 
-func (p *AsyncPublisher) Publish(movie *model.Movie) error {
+func (p *AsyncPublisher) Publish(msg string) error {
+	// no key, the message with end up in random partition
+	p.producer.Input() <- &sarama.ProducerMessage{
+		Topic: config.Topic,
+		Value: sarama.StringEncoder(msg),
+	}
 	return nil
 }

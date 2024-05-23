@@ -3,6 +3,7 @@ package kafka
 import (
 	"github.com/IBM/sarama"
 	"log"
+	"rest_api/internal/api/config"
 )
 
 type SyncPublisher struct {
@@ -10,23 +11,21 @@ type SyncPublisher struct {
 	topic    string
 }
 
-func (p *SyncPublisher) Configure(topic string) *SyncPublisher {
+func (p *SyncPublisher) Configure(topic string) {
 	p.topic = topic
 
-	config := sarama.NewConfig()
-	config.Version = sarama.DefaultVersion
-	config.Producer.RequiredAcks = sarama.WaitForAll // Wait for all in-sync replicas to ack the message
-	config.Producer.Retry.Max = 10                   // Retry up to 10 times to produce the message
-	config.Producer.Return.Successes = true
+	cfg := sarama.NewConfig()
+	cfg.Version = sarama.DefaultVersion
+	cfg.Producer.RequiredAcks = sarama.WaitForAll // Wait for all in-sync replicas to ack the message
+	cfg.Producer.Retry.Max = 10                   // Retry up to 10 times to produce the message
+	cfg.Producer.Return.Successes = true
 
-	producer, err := sarama.NewSyncProducer([]string{brokerList}, config)
+	producer, err := sarama.NewSyncProducer([]string{config.BrokerLink}, cfg)
 	if err != nil {
 		log.Fatalln("Failed to start Sarama producer:", err)
 	}
 
 	p.producer = producer
-
-	return p
 }
 
 func (p *SyncPublisher) Publish(msg string) error {
