@@ -11,8 +11,8 @@ type MovieService struct {
 	movieRepository data.Repository[*model.Movie]
 }
 
-func NewMovieService(repository data.Repository[*model.Movie]) MovieService {
-	return MovieService{movieRepository: repository}
+func NewMovieService(repository data.Repository[*model.Movie]) *MovieService {
+	return &MovieService{movieRepository: repository}
 }
 
 func (s *MovieService) GetAll() ([]*model.Movie, error) {

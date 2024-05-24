@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"rest_api/internal/api/config"
 	"strings"
 )
 
 const (
-	apiUrl          = "https://api.themoviedb.org/3/"
-	searchEndpoint  = "search/movie"
+	ApiUrl          = "https://api.themoviedb.org/3"
+	searchEndpoint  = "/search/movie"
 	detailsEndpoint = "/movie"
 	apiKeyParam     = "?api_key=%s"
 	titleQuery      = "&query=%s"
@@ -20,15 +21,19 @@ const (
 )
 
 type Service struct {
-	client *http.Client
+	client  *http.Client
+	baseURL string
 }
 
-func NewService() Service {
-	return Service{client: http.DefaultClient}
+func NewService(url string) *Service {
+	return &Service{
+		client:  http.DefaultClient,
+		baseURL: url,
+	}
 }
 
 func (s *Service) GetMovieByTitle(title string) (*Movie, error) {
-	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, createSearchUrl(title), nil)
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, s.createSearchUrl(title), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +69,7 @@ func (s *Service) GetMovieByTitle(title string) (*Movie, error) {
 }
 
 func (s *Service) GetMovieByID(id int) (*Movie, error) {
-	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, createDetailsUrl(id), nil)
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, s.createDetailsUrl(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -81,10 +86,10 @@ func (s *Service) GetMovieByID(id int) (*Movie, error) {
 	return movie, nil
 }
 
-func createSearchUrl(title string) string {
-	return strings.Join([]string{apiUrl, searchEndpoint, fmt.Sprintf(apiKeyParam, config.ApiKey), fmt.Sprintf(titleQuery, title)}, "")
+func (s *Service) createSearchUrl(title string) string {
+	return strings.Join([]string{s.baseURL, searchEndpoint, fmt.Sprintf(apiKeyParam, config.ApiKey), fmt.Sprintf(titleQuery, url.PathEscape(title))}, "")
 }
 
-func createDetailsUrl(id int) string {
-	return strings.Join([]string{apiUrl, detailsEndpoint, fmt.Sprintf(idQuery, id), fmt.Sprintf(apiKeyParam, config.ApiKey)}, "")
+func (s *Service) createDetailsUrl(id int) string {
+	return strings.Join([]string{s.baseURL, detailsEndpoint, fmt.Sprintf(idQuery, id), fmt.Sprintf(apiKeyParam, config.ApiKey)}, "")
 }

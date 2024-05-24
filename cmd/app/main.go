@@ -23,16 +23,7 @@ import (
 )
 
 func main() {
-	db := application.CreateDB()
-
-	userRepository := &data.UserRepository{DB: db}
-	movieRepository := &data.MovieRepository{DB: db}
-
-	movieService := service.NewMovieService(movieRepository)
-	tmdbService := tmdb.NewService()
-
-	r := mux.NewRouter()
-
+	// create kafka topic
 	admin, err := sarama.NewClusterAdmin([]string{config.BrokerLink}, sarama.NewConfig())
 	if err != nil {
 		log.Fatalf("Could not create kafka admin: %v", err)
@@ -47,6 +38,7 @@ func main() {
 			log.Fatalf("Could not create topic: %v", err)
 		}
 	}
+	// create kafka publisher
 	var publisher kafka.Publisher
 	if config.SyncPublish {
 		publisher = &kafka.SyncPublisher{}
@@ -55,10 +47,21 @@ func main() {
 	}
 	publisher.Configure(config.Topic)
 
+	//create db and service layer
+	db := application.CreateDB()
+
+	userRepository := &data.UserRepository{DB: db}
+	movieRepository := &data.MovieRepository{DB: db}
+
+	movieService := service.NewMovieService(movieRepository)
+	tmdbService := tmdb.NewService(tmdb.ApiUrl)
+
+	r := mux.NewRouter()
+
 	h := &handler.Handler{
 		UserRepository: userRepository,
-		MovieService:   &movieService,
-		TmdbService:    &tmdbService,
+		MovieService:   movieService,
+		TmdbService:    tmdbService,
 		Publisher:      publisher,
 	}
 
@@ -117,11 +120,11 @@ func main() {
 	}()
 
 	listenAddr := ":3000"
-	log.Printf("Started server on %s", listenAddr)
 	err = server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Could not listen on %s: %v\n", listenAddr, err)
 	}
+	log.Printf("Started server on %s", listenAddr)
 	wg.Wait()
 
 	log.Println("Server stopped")
