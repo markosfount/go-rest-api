@@ -6,7 +6,7 @@ require (
 	github.com/IBM/sarama v1.43.2
 	github.com/gorilla/mux v1.8.0
 	github.com/jarcoal/httpmock v1.3.1
-	github.com/lib/pq v1.10.7
+	github.com/lib/pq v1.10.9
 	github.com/minio/minio-go/v7 v7.0.70
 	github.com/stretchr/testify v1.9.0
 )
