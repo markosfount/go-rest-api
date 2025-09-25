@@ -1,0 +1,24 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # 1. Keep Go modules up to date
+  - package-ecosystem: "gomod"
+    directory: "/"        # Location of go.mod
+    schedule:
+      interval: "weekly"  # Check for updates weekly (daily / monthly also valid)
+    commit-message:
+      prefix: "deps(go)"  # PR title prefix
+    open-pull-requests-limit: 5
+
+  # 2. Keep GitHub Actions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"        # Location of workflow files (.github/workflows)
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(actions)"
+
