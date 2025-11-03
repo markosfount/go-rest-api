@@ -113,7 +113,7 @@ github.com/klauspost/compress/zstd/internal/xxhash
 github.com/klauspost/cpuid/v2
 # github.com/kr/text v0.2.0
 ## explicit
-# github.com/lib/pq v1.10.7
+# github.com/lib/pq v1.10.9
 ## explicit; go 1.13
 github.com/lib/pq
 github.com/lib/pq/oid
