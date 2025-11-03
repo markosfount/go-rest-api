@@ -45,7 +45,7 @@ github.com/hashicorp/go-multierror
 # github.com/hashicorp/go-uuid v1.0.3
 ## explicit
 github.com/hashicorp/go-uuid
-# github.com/jarcoal/httpmock v1.3.1
+# github.com/jarcoal/httpmock v1.4.1
 ## explicit; go 1.18
 github.com/jarcoal/httpmock
 github.com/jarcoal/httpmock/internal
